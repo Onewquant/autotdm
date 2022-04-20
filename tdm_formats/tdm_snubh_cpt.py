@@ -286,45 +286,61 @@ class snubh_cpt_tdm(tdm):
 
     def execution_flow(self):
 
-        for k, v in self.basic_pt_term_dict.items():
-            if k=='tdm_date':
-                st.date_input(v, datetime.today(), key=k)
-            elif k=='sex':
-                st.radio(v,options=('남','여'), horizontal=True, key=k)
-                continue
-            elif k=='age':
-                st.number_input(label=v, min_value=1 ,max_value=120, step=1, key=k)
-            elif k in ('height','weight'):
-                st.number_input(label=v, min_value=0.1 ,max_value=300.0, step=1.0, key=k)
-            elif k=='pedi':
-                if st.session_state['age'] <= 18:
-                    st.session_state['pedi'] = True
+        rcol1, rcol2 = st.columns(2)
+
+        with rcol1:
+            for k, v in self.basic_pt_term_dict.items():
+                if k=='tdm_date':
+                    st.date_input(v, datetime.today(), key=k)
+                elif k=='sex':
+                    st.radio(v,options=('남','여'), horizontal=True, key=k)
+                    continue
+                elif k=='age':
+                    st.number_input(label=v, min_value=1 ,max_value=120, step=1, key=k)
+                elif k in ('height','weight'):
+                    st.number_input(label=v, min_value=0.1 ,max_value=300.0, step=1.0, key=k)
+                elif k=='pedi':
+                    if st.session_state['age'] <= 18:
+                        st.session_state['pedi'] = True
+                    else:
+                        st.session_state['pedi'] = False
+                    continue
+                elif k=='drug':
+                    st.selectbox(v, ('약물을 입력하세요','Vancomycin', 'Amikacin', 'Gentamicin', 'Digoxin', 'Valproic Acid', 'Phenytoin'), key=k)
+                    continue
                 else:
-                    st.session_state['pedi'] = False
-                continue
-            elif k=='drug':
-                st.selectbox(v, ('약물을 입력하세요','Vancomycin', 'Amikacin', 'Gentamicin', 'Digoxin', 'Valproic Acid', 'Phenytoin'), key=k)
-                continue
-            else:
-                st.text_input(v, key=k)
+                    st.text_input(v, key=k)
+
+            st.divider()
 
         if st.session_state['drug']!='약물을 입력하세요':
 
-            st.divider()
-            st.write(f"<참고> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
+            with rcol1:
 
-            additional_inputs = self.additional_pt_term_dict[self.short_drugname_dict[st.session_state['drug']]]
-            # if len(additional_inputs)==0: pass
-            # else:
-            for k, v in additional_inputs.items():
-                if k=='consult': continue
-                else:
-                    st.text_area(v, key=k)
+                st.write(f"<참고> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
 
-            st.button('Generate the first draft', on_click=self.execution_of_generating_first_draft, key='generate_first_draft')
-            st.text_area(label='First Draft', value='', key='first_draft')
+                additional_inputs = self.additional_pt_term_dict[self.short_drugname_dict[st.session_state['drug']]]
+                # if len(additional_inputs)==0: pass
+                # else:
+                for k, v in additional_inputs.items():
+                    if k == 'consult':
+                        continue
+                    else:
+                        st.text_area(v, key=k)
 
-            st.divider()
+                st.button('Generate the first draft', on_click=self.execution_of_generating_first_draft, key='generate_first_draft')
+
+                st.divider()
+
+            with rcol2:
+
+                st.text_area(label='Draft', value='', key='first_draft')
+
+                st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
+
+                st.divider()
+
+                
 
 
 
