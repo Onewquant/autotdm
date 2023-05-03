@@ -254,10 +254,26 @@ def get_all_conomitant_drugs(order_str):
 
 
 class snubh_cpt_tdm(tdm):
-    def __init__(self, tdm_date, hospital, division, tdm_user):
+    def __init__(self):
         super().__init__()
         self.individual_vars()
-        self.set_basic_info(tdm_date, hospital, division, tdm_user)
+        # self.set_basic_info(tdm_date, hospital, division, tdm_user)
+
+    def execution_flow(self):
+        for k, v in self.basic_pt_term_dict.items():
+            if k=='tdm_date': continue
+            elif k=='sex':
+                st.radio(v,options=('남','여'), key=k)
+                continue
+            elif k=='pedi': continue
+            else:
+                st.text_input(v, key=k)
+
+    def retry_execution(self):
+        for k, v in self.basic_pt_term_dict.items():
+            if k=='tdm_date': continue
+            st.session_state[k] = ''
+
 
     def individual_vars(self):
         self.prev_date = ''
