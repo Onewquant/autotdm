@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 import numpy as np
-from tdm import *
+from tdm_formats.tdm import *
 from datetime import datetime, timedelta
 import json
 

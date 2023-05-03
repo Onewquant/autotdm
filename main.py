@@ -3,6 +3,7 @@ import os, sys
 try: project_dir = os.path.abspath(os.path.dirname(__file__))
 except: project_dir = os.path.abspath(os.path.dirname("__file__"))
 sys.path.append(project_dir)
+print(project_dir)
 
 from tdm_import import *
 
