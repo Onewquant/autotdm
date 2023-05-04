@@ -14,6 +14,9 @@ def reset_button():
     st.session_state.tdm_writer = ''
 
 def retry_button():
+    st.session_state.tdm_inst.retry_execution()
+
+def download_button():
     pass
 
 with st.sidebar:
@@ -32,9 +35,14 @@ with st.sidebar:
 
     ## Retry 버튼
     with scol2:
-        retry = st.button('Re-try')
-        if retry:
-            st.session_state['tdm_inst'].retry_execution()
+        st.button('Re-try', on_click=retry_button)
+
+    ## Download 버튼
+    with scol3:
+        # st.session_state['first_draft'] = ''
+        # st.download_button('Download', data=st.session_state['first_draft'], file_name='tdm_result.txt',on_click=download_button)
+        # st.download_button('Download', data=st.session_state['first_draft'], file_name='tdm_result.txt', on_click=download_button)
+        pass
 
     # monitoring_str = '{'
     # for k, v in st.session_state.items():
@@ -48,8 +56,6 @@ else:
    if (st.session_state['hospital'] == '분당서울대학교병원') and (st.session_state['tdm_division'] == '임상약리학과'):
        st.session_state['tdm_inst'] = snubh_cpt_tdm()
        st.session_state['tdm_inst'].execution_flow()
-
-
 
    elif (st.session_state['hospital'] == '서울대학교병원') and (st.session_state['tdm_division'] == '임상약리학과'):
        st.session_state['tdm_inst'] = snuh_cpt_tdm()

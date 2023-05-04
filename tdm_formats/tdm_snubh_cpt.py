@@ -296,9 +296,8 @@ class snubh_cpt_tdm(tdm):
                 else:
                     st.text_area(v, key=k)
 
-            if st.button('Generate the first draft', key='generate_first_draft'):
-                self.execution_of_generating_first_draft()
-
+            st.button('Generate the first draft', on_click=self.execution_of_generating_first_draft, key='generate_first_draft')
+            st.text_area(label='First Draft', value='', key='first_draft')
 
     def execution_of_generating_first_draft(self):
 
@@ -308,7 +307,7 @@ class snubh_cpt_tdm(tdm):
         self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
         for k, v in st.session_state.items():
-            if k in ('tdm_inst', 'tdm_date', 'drug'):continue
+            if k in ('tdm_inst', 'tdm_date', 'drug', 'first_draft'):continue
             elif k=='sex':
                 self.pt_dict[k]= 'M' if v=='남' else 'F'
             elif k=='age':
@@ -344,7 +343,7 @@ class snubh_cpt_tdm(tdm):
                 self.pt_dict[k] = v
 
         self.generate_tdm_reply_text()
-        st.text_area(label='First Draft',value=self.file_content, key='first_draft')
+        st.session_state['first_draft'] = self.file_content
         # st.text_area('',self.file_content,)
 
     def retry_execution(self):
