@@ -297,19 +297,55 @@ class snubh_cpt_tdm(tdm):
                     st.text_area(v, key=k)
 
             if st.button('Generate the first draft', key='generate_first_draft'):
-                # ### Hx 처리
-                # value = st.text_area(v, key=k)
-                # self.pt_hx_raw = self.get_reduced_sentence(value)
-                # if self.pt_hx_raw != '':
-                #     self.pt_hx_df = self.get_pt_hx_df(hx_str=self.pt_hx_raw)
-                #     st.session_state
-                #
-                # ### Consult 처리
-                # st.session_state['consult'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
+                self.execution_of_generating_first_draft()
 
-                pass
 
-            st.text_area('First Draft', key='first_draft')
+    def execution_of_generating_first_draft(self):
+
+        self.tdm_writer = st.session_state['tdm_writer']
+        self.tdm_date = st.session_state['tdm_date'].strftime('%Y-%m-%d')
+        self.pt_dict['tdm_date'] = self.tdm_date
+        self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
+
+        for k, v in st.session_state.items():
+            if k in ('tdm_inst', 'tdm_date', 'drug'):continue
+            elif k=='sex':
+                self.pt_dict[k]= 'M' if v=='남' else 'F'
+            elif k=='age':
+                self.pt_dict[k] = v
+                if v <= 18:
+                    self.pt_dict['pedi'] = True
+                else:
+                    self.pt_dict['pedi'] = False
+            elif k=='history':
+                self.pt_hx_raw = self.get_reduced_sentence(v)
+                if self.pt_hx_raw != '':
+                    self.pt_hx_df = self.get_pt_hx_df(hx_str=self.pt_hx_raw)
+                    self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
+                    self.pt_dict['consult'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
+                else:
+                    self.pt_dict[k] = ''
+                    self.pt_dict['consult'] = ''
+            elif k == 'hemodialysis':
+                self.pt_dict[k] = self.get_reduced_sentence(v)
+            elif k == 'electroencephalography':
+                self.pt_dict[k] = self.get_parsed_eeg_result(eeg_result=v)
+            elif k == 'echocardiography':
+                self.pt_dict[k] = self.get_parsed_echocardiography_result(echo_result=v)
+            elif k=='ecg':
+                self.pt_dict[k] = self.get_parsed_ecg_result(ecg_result=v)
+            elif k=='vs':
+                self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
+            elif k=='lab':
+                self.pt_dict[k] = self.get_parsed_lab_df(value=v)
+            elif k=='order':
+                self.pt_dict[k] = self.parse_order_record(order_str=v)
+            else:
+                self.pt_dict[k] = v
+
+        self.generate_tdm_reply_text()
+        st.text_area(label='First Draft',value=self.file_content, key='first_draft')
+        # st.text_area('',self.file_content,)
 
     def retry_execution(self):
 
@@ -444,6 +480,122 @@ class snubh_cpt_tdm(tdm):
 
         self.ldf = pd.DataFrame(columns=['no_lab'])
         self.raw_lab_input = 'N'
+
+    def get_parsed_lab_df(self, value):
+        raw_ldf_cols = ['보고일', '오더일', '검사명', '검사결과', '직전결과', '참고치', '결과비고', '오더비고']
+        raw_ldf = pd.DataFrame([tbl_row.split('\t') for tbl_row in value.split('\n')])
+        cur_rldf_cols = list(raw_ldf.columns)
+        vld_rldf_cols = list()
+        for i in range(len(cur_rldf_cols)):
+            if i + 1 > len(cur_rldf_cols):
+                vld_rldf_cols.append(str(i))
+            else:
+                vld_rldf_cols.append(raw_ldf_cols[i])
+
+        raw_ldf.columns = vld_rldf_cols
+
+        for inx, rrow in raw_ldf.iterrows():
+            if (rrow['검사명'] == 'WBC') and ('HPF' in rrow['참고치']):
+                raw_ldf.at[inx, '검사명'] = 'u.WBC'
+            elif (rrow['검사명'] == 'RBC') and ('HPF' in rrow['참고치']):
+                raw_ldf.at[inx, '검사명'] = 'u.RBC'
+
+        # raw_ldf['검사명'].unique()
+        # raw_ldf['date'] =
+        raw_ldf['검사명'] = raw_ldf['검사명'].map(lambda x: x.strip())
+        raw_ldf['dt_raw'] = raw_ldf[['보고일', '오더일']].min(axis=1) + 'T00:00:00'
+        raw_ldf_list = list()
+        # for dt, frag_ldf in raw_ldf[['dt_raw', '검사명', '검사결과']].groupby(['dt_raw']):break
+        for dt, frag_ldf in raw_ldf[['dt_raw', '검사명', '검사결과']].groupby(['dt_raw']):
+            frag_ldf = frag_ldf.reset_index(drop=True)
+            frag_ldf['index'] = frag_ldf.index
+            frag_ldf['dt'] = frag_ldf[['dt_raw', 'index']].apply(lambda x: (
+                        datetime.strptime(x['dt_raw'], '%Y-%m-%dT%H:%M:%S') + timedelta(
+                    seconds=int(x['index']))).strftime('%Y-%m-%dT%H:%M:%S'), axis=1)
+            #
+            # for smdtlab_dict in [{'WBC':0, 'Seg.neut.':0, 'ANC':0}, {'Ca':0, 'total':0, 'K':0}, {'BUN':0, 'Cr (S)':0}]: break
+            for smdtlab_dict in [{'WBC': 0, 'Seg.neut.': 0, 'ANC': 0}, {'Ca, total': 0, 'K': 0},
+                                 {'BUN': 0, 'Cr (S)': 0, 'Creatinine': 0}, {'Platelet': 0, 'PT %': 0, 'aPTT': 0}]:
+                smdtlab_df = frag_ldf[frag_ldf['검사명'].isin(smdtlab_dict.keys())].copy()
+                if len(smdtlab_df) == 0: continue
+                smdt = smdtlab_df['dt'].min()
+                smdtlab_df['dt'] = smdt
+                # for smdinx, smdrow in smdtlab_df.iterrows():break
+                for smdinx, smdrow in smdtlab_df.iterrows():
+                    frag_ldf.at[smdinx, 'dt'] = (datetime.strptime(smdrow['dt'], '%Y-%m-%dT%H:%M:%S') + timedelta(
+                        seconds=smdtlab_dict[smdrow['검사명']])).strftime('%Y-%m-%dT%H:%M:%S')
+                    smdtlab_dict[smdrow['검사명']] += 1
+
+            raw_ldf_list.append(frag_ldf[['dt', '검사명', '검사결과']].copy())
+        raw_ldf = pd.concat(raw_ldf_list, ignore_index=True).reset_index(drop=True)
+
+        raw_ldf = raw_ldf.pivot(index='dt', columns='검사명', values='검사결과')
+        raw_ldf.columns.name = None
+        raw_ldf = raw_ldf.reset_index(drop=False)
+        # self.re_ldf.columns
+        self.re_ldf = raw_ldf.copy()
+
+        # self.re_ldf = self.re_ldf.reset_index(drop=False).rename(columns={'index':'dt'})
+        # self.re_ldf['dt'] = self.re_ldf['dt'].map(lambda x:x.strftime('%Y-%m-%dT%H:%M:%S'))
+        self.re_ldf['date'] = self.re_ldf['dt'].map(lambda x: x.split('T')[0])
+        raw_clist = list(self.re_ldf.columns)
+        raw_cser = pd.Series(raw_clist)
+        raw_cset = set(self.re_ldf.columns)
+
+        dup_cols = [c for c in raw_cset if (raw_cser == c).sum() > 1]
+        uniq_cols = list(raw_cset - set(dup_cols))
+        res_cols = list(raw_cser.drop_duplicates(keep='first'))
+
+        # for c in dup_cols[1:]: break
+        self.ldf = self.re_ldf[uniq_cols].copy()
+        for c in dup_cols:
+            newc_ds = pd.Series(np.full(len(self.re_ldf), np.nan), index=list(self.re_ldf.index))
+            for cinx, crow in self.re_ldf[c].iterrows():
+                # crow = self.re_ldf[c].iloc[0]
+                crow_uniq = crow.drop_duplicates(keep='first')
+                crow_uniq = crow_uniq.map(lambda x: x if type(x) == float else np.nan).drop_duplicates(keep='first')
+                nv_data_cond = ((len(crow_uniq.values) == 1) and (np.isnan(crow_uniq.iat[0])))
+                newc_ds.at[cinx] = np.nan if nv_data_cond else np.nanmax(crow)
+            self.ldf[c] = newc_ds.copy()
+
+        self.ldf = self.ldf[res_cols].sort_values(by=['dt'], ascending=False, ignore_index=True)
+
+        ## Cr (S) 와 Creatinine 병합
+
+        ldf_cols = list(self.ldf.columns)
+        cr_list = ['Cr (S)', 'Creatinine']
+        if ('Cr (S)' in ldf_cols) and ('Creatinine' in ldf_cols):
+            # linx=5,
+            # lrow=self.ldf[cr_list].iloc[linx]
+            for linx, lrow in self.ldf[cr_list].iterrows():
+                cr_vals = []
+                for cr in cr_list:
+                    if type(lrow[cr]) == float:
+                        cr_vals.append(lrow[cr])
+                        continue
+                    elif type(lrow[cr]) == str:
+                        if lrow[cr] in ('', '-', '.'):
+                            cr_vals.append(np.nan)
+                        else:
+                            cr_vals.append(float(lrow[cr].replace('<', '').replace('>', '')))
+                self.ldf.at[linx, 'Cr (S)'] = max(cr_vals)
+        elif ('Cr (S)' not in ldf_cols) and ('Creatinine' in ldf_cols):
+            self.ldf['Cr (S)'] = np.nan
+            for linx, lrow in self.ldf[cr_list].iterrows():
+                cr_list = ['Creatinine', ]
+                cr_vals = []
+                for cr in cr_list:
+                    if type(lrow[cr]) == float:
+                        cr_vals.append(lrow[cr])
+                        continue
+                    elif type(lrow[cr]) == str:
+                        if lrow[cr] in ('', '-', '.'):
+                            cr_vals.append(np.nan)
+                        else:
+                            cr_vals.append(float(lrow[cr].replace('<', '').replace('>', '')))
+                self.ldf.at[linx, 'Cr (S)'] = max(cr_vals)
+
+        return self.ldf
 
     @staticmethod
     def get_reduced_sentence(sentence):
@@ -1313,9 +1465,9 @@ class snubh_cpt_tdm(tdm):
 
     def generate_tdm_reply_text(self):
 
-        file_name = f"{self.pt_dict['drug']}_{self.pt_dict['name']}_{self.pt_dict['id']}_{self.pt_dict['tdm_date'].replace('-','')}.txt"
-        file_path = f"{self.reply_text_saving_dir}/{file_name}"
-        file_content = ""
+        # file_name = f"{self.pt_dict['drug']}_{self.pt_dict['name']}_{self.pt_dict['id']}_{self.pt_dict['tdm_date'].replace('-','')}.txt"
+        # file_path = f"{self.reply_text_saving_dir}/{file_name}"
+        # file_content = ""
 
         basic_info_text = f"{self.pt_dict['id']} {self.pt_dict['name']} {self.pt_dict['sex']}/{self.pt_dict['age']} {self.pt_dict['height']}cm {self.pt_dict['weight']}kg {self.pt_dict['drug']}\n\n"
         # hx_text = f"*Hx.\n{self.pt_dict['history']}\n\n"

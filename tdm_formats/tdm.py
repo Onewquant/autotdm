@@ -9,7 +9,7 @@ class tdm():
         self.tdm_date = ''
         self.hospital = ''
         self.division = ''
-        self.tdm_user = ''
+        self.tdm_writer = ''
 
     def individual_vars(self):
         pass
