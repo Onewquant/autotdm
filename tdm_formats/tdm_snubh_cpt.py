@@ -260,26 +260,78 @@ class snubh_cpt_tdm(tdm):
         # self.set_basic_info(tdm_date, hospital, division, tdm_user)
 
     def execution_flow(self):
+
         for k, v in self.basic_pt_term_dict.items():
-            if k=='tdm_date': continue
+            if k=='tdm_date':
+                st.date_input(v, datetime.today(), key=k)
             elif k=='sex':
-                st.radio(v,options=('남','여'), key=k)
+                st.radio(v,options=('남','여'), horizontal=True, key=k)
                 continue
-            elif k=='pedi': continue
+            elif k=='age':
+                st.number_input(label=v, min_value=1 ,max_value=120, step=1, key=k)
+            elif k in ('height','weight'):
+                st.number_input(label=v, min_value=0.1 ,max_value=300.0, step=1.0, key=k)
+            elif k=='pedi':
+                if st.session_state['age'] <= 18:
+                    st.session_state['pedi'] = True
+                else:
+                    st.session_state['pedi'] = False
+                continue
+            elif k=='drug':
+                st.selectbox(v, ('약물을 입력하세요','Vancomycin', 'Amikacin', 'Gentamicin', 'Digoxin', 'Valproic Acid', 'Phenytoin'), key=k)
+                continue
             else:
                 st.text_input(v, key=k)
 
+        if st.session_state['drug']!='약물을 입력하세요':
+
+            st.divider()
+            st.write(f"<참고> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
+
+            additional_inputs = self.additional_pt_term_dict[self.short_drugname_dict[st.session_state['drug']]]
+            # if len(additional_inputs)==0: pass
+            # else:
+            for k, v in additional_inputs.items():
+                if k=='consult': continue
+                else:
+                    st.text_area(v, key=k)
+
+            if st.button('Generate the first draft', key='generate_first_draft'):
+                # ### Hx 처리
+                # value = st.text_area(v, key=k)
+                # self.pt_hx_raw = self.get_reduced_sentence(value)
+                # if self.pt_hx_raw != '':
+                #     self.pt_hx_df = self.get_pt_hx_df(hx_str=self.pt_hx_raw)
+                #     st.session_state
+                #
+                # ### Consult 처리
+                # st.session_state['consult'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
+
+                pass
+
+            st.text_area('First Draft', key='first_draft')
+
     def retry_execution(self):
-        for k, v in self.basic_pt_term_dict.items():
-            if k=='tdm_date': continue
-            st.session_state[k] = ''
+
+        st.session_state['tdm_date'] = datetime.today()
+        st.session_state['id'] = ''
+        st.session_state['name'] = ''
+        st.session_state['sex'] = '남'
+        st.session_state['age'] = 1
+        st.session_state['height'] = 1.0
+        st.session_state['weight'] = 1.0
+        st.session_state['drug'] = '약물을 입력하세요'
+
+        # for k, v in self.basic_pt_term_dict.items():
+        #     if k=='tdm_date': continue
+        #     st.session_state[k] = ''
 
 
     def individual_vars(self):
         self.prev_date = ''
         self.win_period = 7
         self.basic_pt_term_dict = {'tdm_date': 'TDM작성날짜',
-                                   'id': '등록번호',
+                                   'id': '환자등록번호',
                                    'name': '이름',
                                    'sex': '성별',
                                    'age': '나이',
@@ -291,7 +343,8 @@ class snubh_cpt_tdm(tdm):
         self.basic_pt_dict = dict()
         for k, v in self.basic_pt_term_dict.items(): self.basic_pt_dict[k] = ''
 
-        self.additional_pt_term_dict = {'VCM': {'history': '환자 History',
+        self.additional_pt_term_dict = {'DRUG was not chosen':dict(),
+                                        'VCM': {'history': '환자 History',
                                                 'hemodialysis': '혈액투석',
                                                 'consult': '타과컨설트',
                                                 'vs': 'Vital Sign - (BT))',
@@ -327,6 +380,9 @@ class snubh_cpt_tdm(tdm):
                                                 'order': '전체오더'
                                                 },
                                         }
+
+        self.short_drugname_dict = {'약물을 입력하세요':'DRUG was not chosen', 'Vancomycin': 'VCM', 'Amikacin': 'AMK', 'Gentamicin': 'GTM', 'Digoxin': 'DGX', 'Valproic Acid': 'VPA', 'Phenytoin': 'PHT'}
+        # self.short_drugname = ''
 
         self.pt_term_dict = dict()
         self.pt_dict = dict()
