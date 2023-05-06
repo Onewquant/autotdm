@@ -481,6 +481,8 @@ class snubh_cpt_tdm(tdm):
         self.raw_lab_input = 'N'
 
     def get_parsed_lab_df(self, value):
+        # value=''
+        # value=input()
         raw_ldf_cols = ['보고일', '오더일', '검사명', '검사결과', '직전결과', '참고치', '결과비고', '오더비고']
         raw_ldf = pd.DataFrame([tbl_row.split('\t') for tbl_row in value.split('\n')])
         cur_rldf_cols = list(raw_ldf.columns)
@@ -492,6 +494,9 @@ class snubh_cpt_tdm(tdm):
                 vld_rldf_cols.append(raw_ldf_cols[i])
 
         raw_ldf.columns = vld_rldf_cols
+        if (len(raw_ldf.columns)==1) or (len(raw_ldf)==1):
+            self.ldf = pd.DataFrame(columns=['date','dt'])
+            return self.ldf
 
         for inx, rrow in raw_ldf.iterrows():
             if (rrow['검사명'] == 'WBC') and ('HPF' in rrow['참고치']):
@@ -630,6 +635,7 @@ class snubh_cpt_tdm(tdm):
         # echo_result = self.pt_dict['echocardiography']
         echo_result_df = pd.DataFrame(columns=['date', 'echo_result'])
         if type(echo_result) != str: pass
+        elif echo_result == '': pass
         else:
             echo_result_df = [(s.split('작성과: ')[-1].replace(' ', '').split(')\n')[0].split('(')[-1].replace('\n', '').replace('.', '-'),self.get_replaced_str_from_tups(target_str=s.split('Summary')[0],tups=[(' / ','/'),('\n',' '),(' .','.'),(' -','-'),(' %','%')]).strip()) for s in echo_result.split('Conclusions')[1:]]
             echo_result_df = pd.DataFrame(echo_result_df, columns=['date', 'echo_result']).sort_values(['date'], ascending=False)
@@ -647,10 +653,11 @@ class snubh_cpt_tdm(tdm):
 
 
     def get_parsed_eeg_result(self, eeg_result):
-        # echo_result = self.pt_dict['echocardiography']
+        # echo_result = self.pt_dict['electroencephalography']
         # eeg_result = input()
         eeg_result_df = pd.DataFrame(columns=['date', 'eeg_result'])
         if type(eeg_result) != str: pass
+        elif eeg_result=='': pass
         else:
             eeg_result_df = [(s.replace(' ', '').split(')\n')[0].split('(')[-1].replace('\n', '').replace('.', '-'), self.get_replaced_str_from_tups(target_str=s.split('소견\n')[-1].split('작성자\n')[0], tups=[(' / ', '/'), ('\n', ' '), (' .', '.'), (' -', '-'), (' %', '%'), ('    ', ' '), ('   ', ' '), ('  ', ' ')]).strip()) for s in eeg_result.split('작성과: ')[1:]]
             eeg_result_df = pd.DataFrame(eeg_result_df, columns=['date', 'eeg_result']).sort_values(['date'], ascending=False)
@@ -757,7 +764,7 @@ class snubh_cpt_tdm(tdm):
     def parse_order_record(self, order_str):
         # order_str = input().strip()
         # order_str = self.pt_dict['order']
-
+        # order_str='j'
         raw_order_str_list = order_str.split('\n')
         # if len(raw_order_str_list)==0: return self.order_df
 
@@ -766,6 +773,11 @@ class snubh_cpt_tdm(tdm):
         parsed_order_list = list()
         for row in raw_order_str_list:
             parsed_order_list.append(dict(list(zip(self.raw_order_cols, row.split('\t')))))
+        if (len(parsed_order_list)==1):
+            if len(list(parsed_order_list[0].keys()))==1:
+                if (list(parsed_order_list[0].keys())[-1])=='처방지시':
+                    self.order_df = pd.DataFrame(columns=['처방지시', '발행처', '발행의', '수납', '약국/검사', '주사시행처', 'Acting', '변경의'])
+                    return self.order_df
         # self.result_order_cols
         self.order_df = pd.DataFrame(parsed_order_list)
 
@@ -951,6 +963,7 @@ class snubh_cpt_tdm(tdm):
 
     def get_lab_text(self, drug):
         # drug = self.pt_dict['drug']
+        # drug = 'VCM'
         self.drug_lablist_dict = {'VCM': {'WBC(seg%)/ANC': ['WBC', 'Seg.neut.', 'ANC'],
                                           'BUN/Cr': ['BUN', 'Cr (S)'],
                                           'GFR': ['eGFR-MDRD', 'eGFR-CKD-EPI', 'eGFR-Schwartz(소아)', '나이'],
@@ -989,7 +1002,6 @@ class snubh_cpt_tdm(tdm):
         labtups = tuple(self.drug_lablist_dict[drug].keys())
         self.labres_dict = dict([(c, '') for c in labtups])
         self.labrescount_dict = dict([(c, 0) for c in labtups])
-
 
         uniq_date = [d for d in self.ldf['date'].unique() if (d >= self.prev_date)]
         uniq_date.sort(reverse=True)
@@ -1055,6 +1067,9 @@ class snubh_cpt_tdm(tdm):
         dodf['투여날짜'] = ''
         dodf['투여시간list'] = ''
 
+        if len(dodf)==0:
+            return dodf
+
         ## 약어 참고
         # MIV : Mix Intra Venous (혼합정맥주사) / PLT : PER L-Tube (L-tube로 주입) / IVS : IV side push (수액주입경로를 통한 정맥주사)
         # q24h : 24시간마다 1회 투여 / q12h : 12시간마다 1회 투여
@@ -1077,7 +1092,7 @@ class snubh_cpt_tdm(tdm):
         admin_path_dict = {"[MIV]" : "IV", "[PLT]": "PO", "[P.O]":"PO", "[IVS]":"IV"}
         # doinx = 0
         # dorow = dodf.iloc[doinx]
-        dodf['처방지시']
+        # dodf['처방지시']
         for doinx, dorow in dodf.iterrows():
             doinfo_str = dorow['처방지시']
 
@@ -1157,6 +1172,11 @@ class snubh_cpt_tdm(tdm):
         # adm_df = dodf.copy()
         adm_df = self.get_drug_administration_hx(drug=drug)
         adm_df = adm_df[adm_df['투여시간list'].map(lambda x: len(x) > 0)].reset_index(drop=True)
+        if len(adm_df)==0:
+            full_adm_text = f"*이전 투약력\n\n*현 투약력"
+            min_prev_adm_dtstr = '0000-01-01'
+            return full_adm_text, min_prev_adm_dtstr
+
         adm_df = adm_df.sort_values(['투여날짜'], ascending=False, ignore_index=True)
 
         uniq_date_list = list(adm_df['투여날짜'].drop_duplicates())
@@ -1263,6 +1283,11 @@ class snubh_cpt_tdm(tdm):
         cr_base_value = np.nan
         gfr_base_value = np.nan
 
+        if len(self.pt_dict['lab'])==0:
+            cr_base_date_txt=''
+            gfr_base_date_txt=''
+            return {"Cr": (cr_base_date_txt,cr_base_value), "GFR": (gfr_base_date_txt,gfr_base_value)}
+
         cr_base_df = self.pt_dict['lab'][['dt', 'date', 'Cr (S)']].copy()
         cr_base_df = cr_base_df.dropna().reset_index(drop=True)
         if prev_adm_date > cr_base_df['date'].min():
@@ -1328,6 +1353,8 @@ class snubh_cpt_tdm(tdm):
                               }
         cm_except_list = [d.lower() for d in self.drug_fullname_dict[drug]]
         cm_cand_list = self.conc_mdx_dict[drug]
+        if len(self.order_df)==0:
+            return conc_mdx_str
         dodf = self.order_df[(self.order_df['D/C'] == False)].reset_index(drop=True)
         check_date_list = list(dodf['date'].drop_duplicates().sort_values(ascending=False, ignore_index=True).iloc[:2])
         dodf = dodf[dodf['date'].isin(check_date_list)].copy()
@@ -1368,7 +1395,11 @@ class snubh_cpt_tdm(tdm):
 
         # drug = self.pt_dict['drug']
         # vdf = self.pt_dict['vs']
+
         raw_vs_str_list = [rv for rv in raw_vs.split('\n') if rv!='']
+        if len(raw_vs_str_list)==0:
+            self.vs_df = pd.DataFrame(columns=['SBP (mmHg)', 'DBP (mmHg)', 'PR (회/min)', 'BT (℃)', 'date'])
+            return self.vs_df
 
         self.raw_vs_cols = [vsc.split('\t')[0] for vsc in raw_vs_str_list if vsc!='']
 
@@ -1413,7 +1444,7 @@ class snubh_cpt_tdm(tdm):
     def get_vs_text(self, drug):
         # drug = self.pt_dict['drug']
         vs_text = ''
-
+        # vs_df = pd.DataFrame(columns=['date','BT (℃)','SBP (mmHg)','DBP (mmHg)','PR (회/min)'])
         if drug in ('VCM', 'AMK', 'GTM'):
             vs_text_dict = {"*Max BT": [], }
             date_list = list(self.vs_df['date'].unique())
@@ -1434,6 +1465,7 @@ class snubh_cpt_tdm(tdm):
             vs_text_dict = {"SBP/DBP": [], "HR": [],}
             date_list = list(self.vs_df['date'].unique())
             date_list.sort(reverse=True)
+            # date_list = []
             for vdate in date_list:
                 vdf_frag = self.vs_df[self.vs_df['date']==vdate].copy()
                 tdmform_vdate = get_tdm_dateform(date_str=vdate)
@@ -1470,7 +1502,7 @@ class snubh_cpt_tdm(tdm):
 
         basic_info_text = f"{self.pt_dict['id']} {self.pt_dict['name']} {self.pt_dict['sex']}/{self.pt_dict['age']} {self.pt_dict['height']}cm {self.pt_dict['weight']}kg {self.pt_dict['drug']}\n\n"
         # hx_text = f"*Hx.\n{self.pt_dict['history']}\n\n"
-        hx_text = f"*Hx.\n\n\n"
+        hx_text = f"*Hx.\n\n"
 
         if self.pt_dict['drug']=='VCM':
             hd_text = f"*HD {self.pt_dict['hemodialysis']}\n\n"
@@ -1485,9 +1517,6 @@ class snubh_cpt_tdm(tdm):
             culture_date_test = get_tdm_dateform(date_str=self.tdm_date)
             culture_text = f"*Cx\nBlood C.: ({culture_date_test})(-)\nUrine: ({culture_date_test})(-)\nSputum: ({culture_date_test})(-)\n\n"
 
-            # prev_admin_text = f"*이전 투약력\n{'테스트중입니다'}\n\n"
-            # cur_admin_text = f"*현 투약력\n{'테스트중입니다'}\n\n"
-            # drug_admin_text = prev_admin_text + cur_admin_text
             drug_admin_text, prev_adm_date = self.get_drug_administration_hx_full_text(drug=self.pt_dict['drug'])
             drug_admin_text +="\n\n"
 
@@ -2092,7 +2121,7 @@ class snubh_cpt_tdm(tdm):
         try:
             self.concentration_df = self.ldf[dc_cols].dropna().sort_values(['date',self.concentration_dict[drug]],ascending=False)
         except:
-            return '테스트중입니다'
+            return ''
         for inx, row in self.concentration_df.iloc[:2].iterrows():
             dc_frag = f"{row['date']} 00:00 {row[self.concentration_dict[drug]]}\n"
             self.concentration_text+=dc_frag
@@ -2121,3 +2150,6 @@ class snubh_cpt_tdm(tdm):
 
     def individual_execution_flow(self):
         pass
+
+
+# self = snubh_cpt_tdm()
