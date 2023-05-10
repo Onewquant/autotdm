@@ -1,11 +1,19 @@
-import os, sys
+from tdm_import import *
 
-try: project_dir = os.path.abspath(os.path.dirname(__file__))
-except: project_dir = os.path.abspath(os.path.dirname("__file__"))
-sys.path.append(project_dir)
-print(project_dir)
+"""
+## 오프라인 테스트 실행
 
 from tdm_import import *
+
+self = snubh_cpt_tdm()
+self.offline_execution_main()
+self.generate_tdm_reply_text()
+self.save_result_offline()
+self.open_result_txt()
+calc_text = self.get_interpretation_and_recommendation_text(drug=self.pt_dict['drug'])
+ir_text = self.ir_text_generator(mode='manual', drug=self.pt_dict['drug'])
+"""
+
 
 def reset_button():
     st.session_state.tdm_date = datetime.today()

@@ -16,5 +16,6 @@ def check_dir_continuous(dir_list, root_path='.'):
         check_dir(dir_str)
     return dir_str
 
+
 from tdm_formats.tdm_snubh_cpt import *
 from tdm_formats.tdm_snuh_cpt import *
