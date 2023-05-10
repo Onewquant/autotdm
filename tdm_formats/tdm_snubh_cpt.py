@@ -345,7 +345,19 @@ class snubh_cpt_tdm(tdm):
 
                 st.button('reflect parameters', on_click=self.reflecting_parameters, key='reflect_parameters')
 
+                self.ir_drug_dict = self.ir_recomm_dict[self.short_drugname_dict[st.session_state['drug']]]
 
+                st.selectbox('농도Level', ['선택하세요',]+list(self.ir_drug_dict.keys()), key='ir_conc')
+
+                if st.session_state['ir_conc']!='선택하세요':
+
+                    self.recom_tot_dict = self.ir_drug_dict[st.session_state['ir_conc']]
+
+                    st.selectbox('항정상태여부', ['선택하세요', ] + [k.split('_')[1] for k in self.recom_tot_dict.keys() if k.split('_')[0]=='rec1'], key='ir_state')
+
+                    st.selectbox('Method', ['선택하세요', ] + [k.split('_')[1] for k in self.recom_tot_dict.keys() if k.split('_')[0]=='rec2'], key='ir_method')
+
+                    st.button('reflect ir', on_click=self.reflecting_ir_text, key='reflect_ir')
 
     def execution_of_generating_first_draft(self):
 
@@ -1976,6 +1988,12 @@ class snubh_cpt_tdm(tdm):
                                        },
                                }
 
+        self.threshold_dict = {"AMK": {'toxic': 25.1, 'upper_margin': 24.9, 'lower_margin': 5.1, 'subthera': 4.9},
+                               "VCM": {'toxic': 610, 'upper_margin': 590, 'lower_margin': 410, 'subthera': 395},
+                               "DGX": {'toxic': 1.51, 'upper_margin': 1.49, 'lower_margin': 0.51, 'subthera': 0.49},
+                               "GTM": {'toxic': 610, 'upper_margin': 590, 'lower_margin': 410, 'subthera': 395},
+                               }
+
 
     def get_parameter_input(self):
 
@@ -2053,7 +2071,7 @@ class snubh_cpt_tdm(tdm):
         later_text = "= Interpretation : " + st.session_state['first_draft'].split("= Interpretation : ")[-1]
         st.session_state['first_draft'] = prior_text + parameter_input_text + later_text
 
-    def get_interpretation_and_recommendation_text(self, drug):
+    def offline_get_interpretation_and_recommendation_text(self, drug):
 
         self.define_ir_info()
         self.ir_dict = dict()
@@ -2126,7 +2144,45 @@ class snubh_cpt_tdm(tdm):
         result_text = calc_text+drug_conc_text
         return result_text
 
-    def ir_text_generator(self, mode='manual', drug='', co_med_list=[]):
+    def get_ir_text(self):
+
+        drug = self.short_drugname_dict[st.session_state['drug']]
+
+        self.ir_step_tups = ('ir_conc', 'ir_state', 'ir_method')
+
+        self.ir_mediating_dict = dict([(irs, "") for irs in self.ir_step_tups])
+        self.ir_result_dict = dict([(irs, "") for irs in self.ir_step_tups])
+
+        for k in self.ir_step_tups:
+
+            self.ir_mediating_dict[k] = st.session_state[k]
+
+        iconc_str = self.interpretation_dict[self.ir_mediating_dict['ir_state']][self.ir_mediating_dict['ir_conc']]
+
+        rec1_key = f"rec1_{self.ir_mediating_dict['ir_state']}"
+        rec2_key = f"rec2_{self.ir_mediating_dict['ir_method']}"
+
+        rec1_str = self.ir_recomm_dict[drug][self.ir_mediating_dict['ir_conc']][rec1_key]
+        rec2_str = self.ir_recomm_dict[drug][self.ir_mediating_dict['ir_conc']][rec2_key]
+
+        prefix_str = ''
+        if drug == 'DGX':
+            prefix_str = '* Digoxin의 혈중 약물농도만으로는 약효 및 독성 발현 산출에 한계가 있으므로, 임상증상을 뒷받침하는 참고자료로 활용하시기 바랍니다.\n\n'
+
+        self.ir_text = f"= Interpretation : \n{iconc_str}\n\n= Recommendation : \n{prefix_str}{rec1_str}{rec2_str}"
+        self.ir_text = self.ir_text.replace('\n\n', '\n \n')
+        return self.ir_text
+
+    def reflecting_ir_text(self):
+
+        ir_text = self.get_ir_text()
+
+        prior_text = "= Interpretation : ".join(st.session_state['first_draft'].split("= Interpretation : ")[:-1])
+        later_text = "문의사항은 다음의 전화번호로." + st.session_state['first_draft'].split("문의사항은 다음의 전화번호로.")[-1]
+        st.session_state['first_draft'] = prior_text + ir_text + "\n\n\n" + later_text
+
+
+    def offline_ir_text_generator(self, mode='manual', drug='', co_med_list=[]):
 
         ## 특별히 기입한 병용약물 없다면 -> 오더기록에서 있는지 확인 후 구성
         if len(co_med_list)==0:
@@ -2137,16 +2193,7 @@ class snubh_cpt_tdm(tdm):
         else:
             co_med_str = ''
 
-        self.threshold_dict = {"AMK": {'toxic': 25.1, 'upper_margin':24.9, 'lower_margin':5.1, 'subthera': 4.9},
-                               "VCM": {'toxic': 610, 'upper_margin':590, 'lower_margin':410, 'subthera': 395},
-                               "DGX": {'toxic': 1.51, 'upper_margin':1.49, 'lower_margin':0.51, 'subthera': 0.49},
-                               "GTM": {'toxic': 610, 'upper_margin':590, 'lower_margin':410, 'subthera': 395},
-                               }
-
-
         self.ir_drug_dict = self.ir_recomm_dict[drug]
-
-
 
         self.ir_text = ''
         if mode=='manual':

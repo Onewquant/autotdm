@@ -10,8 +10,8 @@ from tdm_import import *
 # self.generate_tdm_reply_text()
 # self.save_result_offline()
 # self.open_result_txt()
-# calc_text = self.get_interpretation_and_recommendation_text(drug=self.pt_dict['drug'])
-# ir_text = self.ir_text_generator(mode='manual', drug=self.pt_dict['drug'])
+# calc_text = self.offline_get_interpretation_and_recommendation_text(drug=self.pt_dict['drug'])
+# ir_text = self.offline_ir_text_generator(mode='manual', drug=self.pt_dict['drug'])
 # """
 
 
