@@ -36,7 +36,7 @@ with st.sidebar:
     st.text_input('사용자명', key='tdm_writer')
 
     st.divider()
-    scol1, scol2, scol3 = st.columns(3)
+    scol1, scol2 = st.columns(2, gap='small')
     ## Reset 버튼
     with scol1:
         st.button('Reset', on_click=reset_button)
@@ -45,12 +45,6 @@ with st.sidebar:
     with scol2:
         st.button('Re-try', on_click=retry_button)
 
-    ## Download 버튼
-    with scol3:
-        # st.session_state['first_draft'] = ''
-        # st.download_button('Download', data=st.session_state['first_draft'], file_name='tdm_result.txt',on_click=download_button)
-        # st.download_button('Download', data=st.session_state['first_draft'], file_name='tdm_result.txt', on_click=download_button)
-        pass
 
     # monitoring_str = '{'
     # for k, v in st.session_state.items():

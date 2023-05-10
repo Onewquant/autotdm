@@ -286,9 +286,9 @@ class snubh_cpt_tdm(tdm):
 
     def execution_flow(self):
 
-        rcol1, rcol2 = st.columns(2)
+        self.rcol1, self.rcol2 = st.columns([1,2], gap="medium")
 
-        with rcol1:
+        with self.rcol1:
             for k, v in self.basic_pt_term_dict.items():
                 if k=='tdm_date':
                     st.date_input(v, datetime.today(), key=k)
@@ -315,7 +315,7 @@ class snubh_cpt_tdm(tdm):
 
         if st.session_state['drug']!='약물을 입력하세요':
 
-            with rcol1:
+            with self.rcol1:
 
                 st.write(f"<참고> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
 
@@ -330,18 +330,20 @@ class snubh_cpt_tdm(tdm):
 
                 st.button('Generate the first draft', on_click=self.execution_of_generating_first_draft, key='generate_first_draft')
 
-                st.divider()
+            with self.rcol2:
 
-            with rcol2:
-
-                st.text_area(label='Draft', value='', key='first_draft')
+                st.text_area(label='Draft', value='', height=594, key='first_draft')
 
                 st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
 
                 st.divider()
 
-                
+                self.define_ir_info()
 
+                for k, v in self.ir_term_dict[self.short_drugname_dict[st.session_state['drug']]].items():
+                    st.number_input(label=v, min_value=0.1, max_value=1000.0, step=1.0, key=k)
+
+                st.button('reflect parameters', on_click=self.reflecting_parameters, key='reflect_parameters')
 
 
 
@@ -411,7 +413,7 @@ class snubh_cpt_tdm(tdm):
     def individual_vars(self):
         self.prev_date = ''
         self.win_period = 7
-        self.basic_pt_term_dict = {'tdm_date': 'TDM작성날짜',
+        self.basic_pt_term_dict = {'tdm_date': 'TDM날짜',
                                    'id': '환자등록번호',
                                    'name': '이름',
                                    'sex': '성별',
@@ -1702,13 +1704,15 @@ class snubh_cpt_tdm(tdm):
         # with open(file_path, "w", encoding="utf-8-sig") as f:
         #     f.write(self.file_content)
 
-    def get_interpretation_and_recommendation_text(self, drug):
-        # self.ir_text = ''
+    def define_ir_info(self):
+
+        self.wkday_dict = {0: '월', 1: '화', 2: '수', 3: '목', 4: '금', 5: '토', 6: '일'}
+
         self.ir_term_dict = {'VCM': {'half_life': 'Half-life (hr)',
                                      'vd_ss': 'Vd steady state (L)',
                                      'total_cl': 'Total Cl (L/hr)',
                                      'vc': 'Vc (L/kg)',
-                                     'est_peak':'추정 peak 농도',
+                                     'est_peak': '추정 peak 농도',
                                      'est_trough': '추정 trough 농도',
                                      'adm_amount': '1회 투약 용량(mg)',
                                      'adm_interval': '투약 간격(h)',
@@ -1716,13 +1720,13 @@ class snubh_cpt_tdm(tdm):
                              'DGX': {'half_life': 'Half-life (hr)',
                                      'total_vd': 'Total Vd (L)',
                                      'total_cl': 'Total Cl (L/hr)',
-                                     'est_peak':'추정 peak 농도',
+                                     'est_peak': '추정 peak 농도',
                                      'est_trough': '추정 trough 농도',
                                      },
                              'AMK': {'half_life': 'Half-life (hr)',
                                      'total_vd': 'Total Vd (L)',
                                      'total_cl': 'Total Cl (L/hr)',
-                                     'est_peak':'추정 peak 농도',
+                                     'est_peak': '추정 peak 농도',
                                      'est_trough': '추정 trough 농도',
                                      },
                              'VPA': {'half_life': 'Half-life (hr)',
@@ -1738,15 +1742,320 @@ class snubh_cpt_tdm(tdm):
                                      'est_trough': '추정 trough 농도',
                                      },
                              }
-        # '[f/u날짜(요일)]'
-        # '[변경약물용법(용량,투약방식,투여간격)]'
-        # [기존예정된투약일(요일, 시간)]
-        # [변경용법적용날짜(요일, 시간, 예상농도)]
-        # [마지막투약일(요일, 시간)]
-        # [측정시 약물 농도 level(Toxic/Non-toxic)]
-        # [당일 예상 투약시점 (시간)]
-        # [당일 예상 투약시점의 예상 농도]
 
+        self.comed_recstr_dict = {'VCM': {'amikacin': 'vancomycin과 병용투여 시 이독성 위험이 증가하고 신기능을 저하시킬 수 있으므로, ',
+                                          'gentamicin': 'vancomycin과 병용투여 시 이독성 위험이 증가하고 신기능을 저하시킬 수 있으므로, ',
+                                          'amphotericin': 'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
+                                          'cyclosporine': 'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
+                                          'tacrolimus': 'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
+                                          'piperacillin/tazobactam': 'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
+                                          'meropenem': 'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
+
+                                          'CRRT': '상환 지속적 신대체요법 적용중으로, CRRT setting 변화에 따른 약물농도의 변동폭이 크므로, ',
+                                          '영아': '영아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
+                                          '유아': '유아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
+                                          '소아': '소아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
+                                          },
+                                  'AMK': {'penicillin': 'amikacin과 병용투여 시 이독성 위험이 증가하고 신기능을 저하시킬 수 있으므로, ',
+                                          'ampicillin': 'amikacin과 병용투여 시 이독성 위험이 증가하고 신기능을 저하시킬 수 있으므로, ',
+                                          'nafcillin': 'amikacin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
+                                          'oxacillin': 'amikacin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
+                                          'carbenecillin': 'amikacin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
+
+                                          'CRRT': '상환 지속적 신대체요법 적용중으로, CRRT setting 변화에 따른 약물농도의 변동폭이 크므로, ',
+                                          '영아': '영아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
+                                          '유아': '유아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
+                                          '소아': '소아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
+                                          },
+                                  'GTM': {'penicillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
+                                          'ampicillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
+                                          'nafcillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
+                                          'oxacillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
+                                          'carbenecillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
+
+                                          'CRRT': '상환 지속적 신대체요법 적용중으로, CRRT setting 변화에 따른 약물농도의 변동폭이 크므로, ',
+                                          '영아': '영아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
+                                          '유아': '유아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
+                                          '소아': '소아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
+                                          },
+                                  'DGX': {},
+                                  'VPA': {},
+                                  'PHT': {},
+                                  }
+
+        # mode = 'manual'
+        # drug = 'VCM'
+
+        # ss = 'SS'
+        # conclusion='Therapeutic'
+        # method = '용법변경'
+
+        self.interpretation_dict = {'SS': {'Subtherapeutic': 'Steady state, Subtherapeutic Level',
+                                           'Lowermargin': 'Steady state, Lower margin of Therapeutic Level',
+                                           'LMofPeak': 'Steady state, Lower margin of Therapeutic Peak Level',
+                                           'Therapeutic': 'Steady state, Therapeutic Level',
+                                           'Uppermargin': 'Steady state, Upper margin of Therapeutic Level',
+                                           'UMofPeak': 'Steady state, Upper margin of Therapeutic Peak Level',
+                                           'Toxic': 'Steady state, Toxic Level',
+                                           'ToxicPeak': 'Steady state, Toxic Peak Level',
+                                           },
+                                    'NSS': {'Subtherapeutic': 'Non-steady state, Subtherapeutic Level expected',
+                                            'Lowermargin': 'Non-steady state, Lower margin of Therapeutic Level expected',
+                                            'LMofPeak': 'Non-steady state, Lower margin of Therapeutic Peak Level expected',
+                                            'Therapeutic': 'Non-steady state, Therapeutic Level expected',
+                                            'Uppermargin': 'Non-steady state, Upper margin of Therapeutic Level expected',
+                                            'UMofPeak': 'Non-steady state, Upper margin of Therapeutic Peak Level expected',
+                                            'Toxic': 'Non-steady state, Toxic Level expected',
+                                            'ToxicPeak': 'Non-steady state, Toxic Peak Level',
+                                            },
+                                    }
+
+        self.ir_recomm_dict = {'AMK': {'Subtherapeutic': {'rec1_SS': '1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec2_공통': '2. 적극적인 감염 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 변경 용법의 적절성을 재확인하시기 바랍니다.',
+                                                          },
+                                       'Lowermargin': {
+                                           'rec1_SS': '1. Lower margin of therapeutic Level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'LMofPeak': {
+                                           'rec1_SS': '1. Lower margin of therapeutic peak level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic peak level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec2_공통': '2. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 유지 용법의 적절성을 재확인하시기 바랍니다.',
+                                                       },
+                                       'Uppermargin': {
+                                           'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'UMofPeak': {
+                                           'rec1_SS': '1. Upper margin of therapeutic peak level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic peak level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'Toxic': {'rec1_SS': '1. Toxic level입니다. ',
+                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Toxic level에 이를 것으로 예상됩니다. ',
+                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
+                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 예정되어있는 다음 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
+                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 신기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 투약 재개 시점 및 재개 용법을 재확인하시기 바랍니다.',
+                                                 },
+                                       'Below The Detection Limit': {
+                                           'rec1_SS': '1. 오늘 측정된 약물 농도는 Below the detection limit 으로 약동학적 파라미터 산출이 불가능합니다.\n\n',
+                                           'rec1_NSS': '1. 오늘 측정된 약물 농도는 Below the detection limit 으로 약동학적 파라미터 산출이 불가능합니다.\n\n',
+                                           'rec2_정규채혈f/u': '2. 투약 재개를 고려하시는 경우 신기능 및 임상상의 변화에 주의하시고, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 용법의 적절성을 재평가하시기 바랍니다',
+                                           'rec2_투약중단상태(현재)': '2. 투약 재개를 고려하시는 경우 단계적 증량 위해 [변경약물용법(용량,투약방식,투여간격)] 로 시작해볼 수 있습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           'rec2_용법추천(subthera명확시)': '2. 규칙적인 투약력 고려하였을 때 적극적인 치료를 위하여 용법 변경을 고려하시는 경우에는 다음 예정된 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 변경해볼 수 있습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+
+                                           },
+                                       'Discontinuation Of Medication': {
+                                           'rec1_SS': '1. 상환 [마지막투약일(요일, 시간)] 마지막 투약 이후 투약 중단 상태이며, 측정된 약물 농도는 [측정시 약물 농도 level(Toxic/Non-toxic)] 입니다. ',
+                                           'rec1_NSS': '1. 상환 [마지막투약일(요일, 시간)] 마지막 투약 이후 투약 중단 상태이며, 측정된 약물 농도는 [측정시 약물 농도 level(Toxic/Non-toxic)] 입니다. \n\n',
+                                           'rec2_Toxic정규채혈f/u': '휴약 유지 권장합니다.\n\n2. 신기능 및 임상상의 변화에 주의하시고, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 용법의 적절성을 재평가하시기 바랍니다',
+                                           'rec2_Toxic곧Non-toxic투약재개': '그러나 이를 기반으로 산출되는 [당일 예상 투약시점 (시간)] 농도는 [당일 예상 투약시점의 예상 농도] mcg/mL 로 Non-toxic level 예상되어 이후 투약 재개해볼 수 있습니다.\n\n2. 투약 재개를 고려하시는 경우 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 재개 가능합니다. 현재 약물배설능이 유지됨을 가정할 때 예상되는 항정상태 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           'rec2_NonToxic투약재개': '투약 재개 가능합니다.\n\n2. 투약 재개를 고려하시는 경우 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 재개 가능합니다. 현재 약물배설능이 유지됨을 가정할 때 예상되는 항정상태 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+
+                                           },
+                                       },
+                               'VCM': {'Subtherapeutic': {'rec1_SS': '1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec2_공통': '2. 적극적인 감염 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 변경 용법의 적절성을 재확인하시기 바랍니다.',
+                                                          },
+                                       'Lowermargin': {
+                                           'rec1_SS': '1. Lower margin of therapeutic Level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec2_공통': '2. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 유지 용법의 적절성을 재확인하시기 바랍니다.',
+                                                       },
+
+                                       'Highpeak': {
+                                           'rec1_SS': '1. Therapeutic level이나, 다소 높은 peak level로 인한 독성 증상의 예방을 위하여 용법 변경 권장합니다.\n\n',
+                                           'rec1_NSS': '1. Therapeutic level에 이를 것으로 예상되나, 다소 높은 peak level로 인한 독성 증상의 예방을 위하여 용법 변경 권장합니다.\n\n',
+                                           'rec2_공통': '2. 독성 증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'Uppermargin': {
+                                           'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.', },
+                                       'Toxic': {'rec1_SS': '1. Toxic level입니다. ',
+                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Toxic level에 이를 것으로 예상됩니다. ',
+                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
+                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 예정되어있는 다음 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
+                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 신기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 투약 재개 시점 및 재개 용법을 재확인하시기 바랍니다.',
+                                                 },
+                                       },
+                               'DGX': {'Subtherapeutic': {'rec1_SS': '1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec2_공통': '2. 적극적인 증상 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
+                                                          },
+                                       'Lowermargin': {
+                                           'rec1_SS': '1. Lower margin of therapeutic level입니다. 증상 조절이 원활하다면 현 용법을 유지할 수 있습니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 증상 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 적극적인 증상 조절을 위해 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
+                                           },
+                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec2_공통': '2. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
+                                                       },
+                                       'Uppermargin': {
+                                           'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Upper margin of therapeutic level에 이를 것으로 예상됩니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ', },
+                                       'Toxic': {'rec1_SS': '1. Toxic level입니다. ',
+                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Toxic level에 도달할 것으로 예상됩니다. ',
+                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약 [기존예정된투약일(요일,시간)] 부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
+                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 예정되어있는 다음 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
+                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규채혈로 TDM 재의뢰하시어 재개 가능 여부를 재확인 하시기 바랍니다.',
+                                                 },
+                                       },
+                               'VPA': {'Subtherapeutic': {'rec1_SS': '1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec2_공통': '2. 적극적인 증상 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)]로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
+                                                          },
+                                       'Lowermargin': {
+                                           'rec1_SS': '1. Lower margin of therapeutic level입니다. 증상 조절이 원활하다면 현 용법을 유지할 수 있습니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 증상 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 적극적인 증상 조절을 위해 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec2_공통': '2. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                                       },
+                                       'Uppermargin': {
+                                           'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Upper margin of therapeutic level에 이를 것으로 예상됩니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.', },
+                                       'Toxic': {'rec1_SS': '1. Toxic level입니다. ',
+                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Toxic level에 도달할 것으로 예상됩니다. ',
+                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n',
+                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성 증상 발현 예방을 위하여 다음 예정된 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규채혈로 TDM 재의뢰하시어 재개 가능 여부를 재확인 하시기 바랍니다.',
+                                                 },
+                                       },
+                               'GTM': {'Subtherapeutic': {'rec1_SS': '1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec2_공통': '2. 적극적인 감염 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 변경 용법의 적절성을 재확인하시기 바랍니다.',
+                                                          },
+                                       'Lowermargin': {
+                                           'rec1_SS': '1. Lower margin of therapeutic Level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'LMofPeak': {
+                                           'rec1_SS': '1. Lower margin of therapeutic peak level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic peak level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec2_공통': '2. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 유지 용법의 적절성을 재확인하시기 바랍니다.',
+                                                       },
+                                       'Uppermargin': {
+                                           'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'UMofPeak': {
+                                           'rec1_SS': '1. Upper margin of therapeutic peak level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic peak level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'Toxic': {'rec1_SS': '1. Toxic level입니다. ',
+                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Toxic level에 이를 것으로 예상됩니다. ',
+                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
+                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 예정되어있는 다음 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
+                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 신기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 투약 재개 시점 및 재개 용법을 재확인하시기 바랍니다.',
+                                                 },
+                                       },
+                               }
+
+
+    def get_parameter_input(self):
+
+        # fu_dt = (datetime.strptime(self.tdm_date, '%Y-%m-%d') + timedelta(days=2))
+
+        weight = st.session_state['weight']
+        drug = self.short_drugname_dict[st.session_state['drug']]
+        age = st.session_state['age']
+        round_num = 1 if drug != 'DGX' else 2
+
+        self.ir_dict = dict()
+        for k, v in self.ir_term_dict[drug].items():
+            self.ir_dict[k] = st.session_state[k]
+            if k in ('total_vd', 'vd_ss'):
+                self.ir_dict['vd'] = float(round(st.session_state[k] / weight, 1))
+            if (k == 'total_cl') and (drug == 'VCM'):
+                self.ir_dict['cl'] = float(round(st.session_state[k] * 1000 / 60 / weight, 1))
+
+        calc_text = ''
+        drug_conc_text = ''
+
+        if (drug == 'VCM'):
+            if (age > 18):
+                calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nVc {round(self.ir_dict['vc'],1)}\nCL(ml/min/kg) {self.ir_dict['cl']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {float(round(self.ir_dict['half_life'], 1))}\nVd ss {self.ir_dict['vd_ss']}"
+            else:
+                calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nCL(ml/min/kg) {self.ir_dict['cl']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {float(round(self.ir_dict['half_life'], 1))}\nVd ss {self.ir_dict['vd_ss']}"
+            auc_val = round(
+                (self.ir_dict['adm_amount'] * (24 / self.ir_dict['adm_interval'])) / round(self.ir_dict['total_cl'], round_num), round_num)
+            drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[drug]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num))} ㎍/mL\n3) 추정 AUC: {auc_val} mg*h/L\n\n"
+
+            if (age > 18):
+                pass
+            else:
+                pedi_type = ''
+                if (age <= 6):
+                    pedi_type = '영유아'
+                elif (age > 6) and (age <= 12):
+                    pedi_type = '소아'
+                elif (age > 13):
+                    pedi_type = '청소년'
+
+                # print(
+                #     f"\n\n### \n* 추가 유의사항 멘트 : {pedi_type}의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로 신기능 및 임상상의 변화에 특히 유의하시고,\n\n")
+
+        elif drug == 'DGX':
+
+            calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], 1)}\nt1/2(hr) {round(self.ir_dict['half_life'], 1)}"
+            drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[drug]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ng/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num))} ng/mL\n\n"
+
+
+        elif drug == 'AMK':
+            calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
+            drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[drug]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
+
+
+        elif drug == 'GTM':
+            calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
+            drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[drug]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
+
+
+        elif drug == 'VPA':
+            calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
+            drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[drug]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
+
+        else: pass
+
+
+        return calc_text + drug_conc_text
+
+    def reflecting_parameters(self):
+
+        parameter_input_text = self.get_parameter_input()
+
+        prior_text = "Vd(L/kg)".join(st.session_state['first_draft'].split("Vd(L/kg)")[:-1])
+        later_text = "= Interpretation : " + st.session_state['first_draft'].split("= Interpretation : ")[-1]
+        st.session_state['first_draft'] = prior_text + parameter_input_text + later_text
+
+    def get_interpretation_and_recommendation_text(self, drug):
+
+        self.define_ir_info()
         self.ir_dict = dict()
 
         self.wkday_dict = {0: '월', 1: '화', 2: '수', 3: '목', 4: '금', 5: '토', 6: '일'}
@@ -1782,16 +2091,6 @@ class snubh_cpt_tdm(tdm):
             else: calc_text = f"[PK Parameters]\n\nVd(L/kg) {self.ir_dict['vd']}\nCL(ml/min/kg) {self.ir_dict['cl']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {float(round(self.ir_dict['half_life'], 1))}\nVd ss {self.ir_dict['vd_ss']}"
             auc_val = round((self.ir_dict['adm_amount'] * (24 / self.ir_dict['adm_interval'])) / round(self.ir_dict['total_cl'], round_num), round_num)
             drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num))} ㎍/mL\n3) 추정 AUC: {auc_val} mg*h/L\n\n"
-            print(calc_text)
-            print(drug_conc_text)
-
-            # print(" ")
-            # print("==========================================================================")
-            # print(f"= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num))} ㎍/mL\n3) 추정 AUC: {auc_val} mg*h/L")
-            # print(" ")
-            # print("[Recommendation 시 주의사항]\n\n")
-            # print( f"## f/u 날짜 참고 : {get_tdm_dateform(fu_dt.strftime('%Y-%m-%d'))}({self.wkday_dict[fu_dt.weekday()]})\n\n")
-            # print(f"## 채혈주의사항 : 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u 하시어 용법의 적절성을 재확인하시기 바랍니다.\n\n")
 
             if (age > 18): pass
             else:
@@ -1802,55 +2101,25 @@ class snubh_cpt_tdm(tdm):
 
                 print(f"\n\n### \n* 추가 유의사항 멘트 : {pedi_type}의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로 신기능 및 임상상의 변화에 특히 유의하시고,\n\n")
 
-
-
         elif drug == 'DGX':
-            # self.ir_text+="* Digoxin의 혈중 약물농도만으로는 약효 및 독성 발현 산출에 한계가 있으므로, 임상증상을 뒷받침하는 참고자료로 활용하시기 바랍니다.\n\n"
-
-
 
             calc_text = f"[PK Parameters]\n\nVd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
             drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ng/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num))} ng/mL\n\n"
 
 
-            # ir_text = self.ir_text_generator(mode='manual', drug=drug)
-            # print(ir_text)
-
-            # print("[Recommendation 시 주의사항]\n\n")
-            # print("## 필수문구 : * Digoxin의 혈중 약물농도만으로는 약효 및 독성 발현 산출에 한계가 있으므로, 임상증상을 뒷받침하는 참고자료로 활용하시기 바랍니다.\n\n")
-            # print(f"## f/u 날짜 참고 : {get_tdm_dateform(fu_dt.strftime('%Y-%m-%d'))}({self.wkday_dict[fu_dt.weekday()]})\n\n")
-            # print(f"## 채혈주의사항 : 투약 30분 전 채혈을 통한 TDM f/u 하시어 용법의 적절성을 재확인하시기 바랍니다.\n\n")
-
         elif drug == 'AMK':
             calc_text=f"[PK Parameters]\n\nVd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
             drug_conc_text=f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
 
-            # print(" ")
-            # print("[Recommendation 시 주의사항]\n\n")
-            # print(f"## f/u 날짜 참고 : {get_tdm_dateform(fu_dt.strftime('%Y-%m-%d'))}({self.wkday_dict[fu_dt.weekday()]})\n\n")
-            # print(f"## 채혈주의사항 : 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u 하시어 용법의 적절성을 재확인하시기 바랍니다.\n\n")
 
         elif drug == 'GTM':
             calc_text=f"[PK Parameters]\n\nVd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
             drug_conc_text=f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
 
-            # print(" ")
-            # print("[Recommendation 시 주의사항]\n\n")
-            # print(
-            #     f"## f/u 날짜 참고 : {get_tdm_dateform(fu_dt.strftime('%Y-%m-%d'))}({self.wkday_dict[fu_dt.weekday()]})\n\n")
-            # print(f"## 채혈주의사항 : 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u 하시어 용법의 적절성을 재확인하시기 바랍니다.\n\n")
 
         elif drug == 'VPA':
             calc_text=f"[PK Parameters]\n\nVd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
             drug_conc_text=f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
-
-            # print(" ")
-            # print("[Recommendation 시 주의사항]\n\n")
-            # print(
-            #     f"## f/u 날짜 참고 : {get_tdm_dateform(fu_dt.strftime('%Y-%m-%d'))}({self.wkday_dict[fu_dt.weekday()]})\n\n")
-            # print(f"## 채혈주의사항 : 투약 30분 전 채혈을 통한 TDM f/u 하시어 용법의 적절성을 재확인하시기 바랍니다.\n\n")
-            # print("## 유의사항멘트 : 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고,\n\n")
-            # drug_admin_text, prev_adm_date = self.get_drug_administration_hx_full_text(drug=self.pt_dict['drug'])
 
         print(calc_text+'\n ')
         print(drug_conc_text)
@@ -1867,223 +2136,6 @@ class snubh_cpt_tdm(tdm):
             co_med_str = ''
         else:
             co_med_str = ''
-
-        self.comed_recstr_dict = {'VCM': {'amikacin': 'vancomycin과 병용투여 시 이독성 위험이 증가하고 신기능을 저하시킬 수 있으므로, ',
-                                          'gentamicin': 'vancomycin과 병용투여 시 이독성 위험이 증가하고 신기능을 저하시킬 수 있으므로, ',
-                                          'amphotericin':'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
-                                          'cyclosporine':'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
-                                          'tacrolimus':'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
-                                          'piperacillin/tazobactam':'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
-                                          'meropenem':'vancomycin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
-
-                                          'CRRT': '상환 지속적 신대체요법 적용중으로, CRRT setting 변화에 따른 약물농도의 변동폭이 크므로, ',
-                                          '영아': '영아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
-                                          '유아': '유아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
-                                          '소아': '소아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
-                                          },
-                                  'AMK': {'penicillin': 'amikacin과 병용투여 시 이독성 위험이 증가하고 신기능을 저하시킬 수 있으므로, ',
-                                          'ampicillin': 'amikacin과 병용투여 시 이독성 위험이 증가하고 신기능을 저하시킬 수 있으므로, ',
-                                          'nafcillin':'amikacin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
-                                          'oxacillin':'amikacin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
-                                          'carbenecillin':'amikacin과 병용투여 시 신기능을 저하시킬 수 있으므로, ',
-
-                                          'CRRT': '상환 지속적 신대체요법 적용중으로, CRRT setting 변화에 따른 약물농도의 변동폭이 크므로, ',
-                                          '영아': '영아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
-                                          '유아': '유아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
-                                          '소아': '소아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
-                                          },
-                                  'GTM':{'penicillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
-                                         'ampicillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
-                                         'nafcillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
-                                         'oxacillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
-                                         'carbenecillin': 'gentamicin과 병용투여 시 synergistic effect가 발생할 수 있으므로, ',
-
-                                         'CRRT': '상환 지속적 신대체요법 적용중으로, CRRT setting 변화에 따른 약물농도의 변동폭이 크므로, ',
-                                         '영아': '영아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
-                                         '유아': '유아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
-                                         '소아': '소아의 경우 성장에 따른 약동학 파라미터 변화의 폭이 크므로, ',
-                                         },
-                                  'DGX':{},
-                                  'VPA':{},
-                                  'PHT':{},
-                                  }
-
-
-        # mode = 'manual'
-        # drug = 'VCM'
-
-        # ss = 'SS'
-        # conclusion='Therapeutic'
-        # method = '용법변경'
-
-        self.interpretation_dict = {'SS':{'Subtherapeutic':'Steady state, Subtherapeutic Level',
-                                          'Lowermargin':'Steady state, Lower margin of Therapeutic Level',
-                                          'LMofPeak':'Steady state, Lower margin of Therapeutic Peak Level',
-                                          'Therapeutic': 'Steady state, Therapeutic Level',
-                                          'Uppermargin': 'Steady state, Upper margin of Therapeutic Level',
-                                          'UMofPeak': 'Steady state, Upper margin of Therapeutic Peak Level',
-                                          'Toxic': 'Steady state, Toxic Level',
-                                          'ToxicPeak': 'Steady state, Toxic Peak Level',
-                                          },
-                                    'NSS': {'Subtherapeutic': 'Non-steady state, Subtherapeutic Level expected',
-                                            'Lowermargin': 'Non-steady state, Lower margin of Therapeutic Level expected',
-                                            'LMofPeak': 'Non-steady state, Lower margin of Therapeutic Peak Level expected',
-                                            'Therapeutic': 'Non-steady state, Therapeutic Level expected',
-                                            'Uppermargin': 'Non-steady state, Upper margin of Therapeutic Level expected',
-                                            'UMofPeak': 'Non-steady state, Upper margin of Therapeutic Peak Level expected',
-                                            'Toxic': 'Non-steady state, Toxic Level expected',
-                                            'ToxicPeak': 'Non-steady state, Toxic Peak Level',
-                                           },
-                                    }
-
-        self.ir_recomm_dict = {'AMK': {'Subtherapeutic':{'rec1_SS':'1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec1_NSS':'1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec2_공통':'2. 적극적인 감염 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 변경 용법의 적절성을 재확인하시기 바랍니다.',
-                                                         },
-                                       'Lowermargin':{'rec1_SS':'1. Lower margin of therapeutic Level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                      'rec1_NSS':'1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                      'rec2_공통':'2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                      },
-                                       'LMofPeak':{'rec1_SS':'1. Lower margin of therapeutic peak level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                   'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic peak level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                   'rec2_공통':'2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                   },
-                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통':'2. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 유지 용법의 적절성을 재확인하시기 바랍니다.',
-                                                       },
-                                       'Uppermargin': {'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통':'2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                       },
-                                       'UMofPeak': {'rec1_SS': '1. Upper margin of therapeutic peak level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                    'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic peak level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                    'rec2_공통':'2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                    },
-                                       'Toxic': {'rec1_SS':'1. Toxic level입니다. ',
-                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Toxic level에 이를 것으로 예상됩니다. ',
-                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
-                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 예정되어있는 다음 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
-                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 신기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 투약 재개 시점 및 재개 용법을 재확인하시기 바랍니다.',
-                                                 },
-                                       'Below The Detection Limit': {'rec1_SS':'1. 오늘 측정된 약물 농도는 Below the detection limit 으로 약동학적 파라미터 산출이 불가능합니다.\n\n',
-                                                                     'rec1_NSS': '1. 오늘 측정된 약물 농도는 Below the detection limit 으로 약동학적 파라미터 산출이 불가능합니다.\n\n',
-                                                                     'rec2_정규채혈f/u': '2. 투약 재개를 고려하시는 경우 신기능 및 임상상의 변화에 주의하시고, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 용법의 적절성을 재평가하시기 바랍니다',
-                                                                     'rec2_투약중단상태(현재)': '2. 투약 재개를 고려하시는 경우 단계적 증량 위해 [변경약물용법(용량,투약방식,투여간격)] 로 시작해볼 수 있습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                                     'rec2_용법추천(subthera명확시)': '2. 규칙적인 투약력 고려하였을 때 적극적인 치료를 위하여 용법 변경을 고려하시는 경우에는 다음 예정된 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 변경해볼 수 있습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-
-                                                 },
-                                       'Discontinuation Of Medication': {'rec1_SS':'1. 상환 [마지막투약일(요일, 시간)] 마지막 투약 이후 투약 중단 상태이며, 측정된 약물 농도는 [측정시 약물 농도 level(Toxic/Non-toxic)] 입니다. ',
-                                                                         'rec1_NSS': '1. 상환 [마지막투약일(요일, 시간)] 마지막 투약 이후 투약 중단 상태이며, 측정된 약물 농도는 [측정시 약물 농도 level(Toxic/Non-toxic)] 입니다. \n\n',
-                                                                         'rec2_Toxic정규채혈f/u': '휴약 유지 권장합니다.\n\n2. 신기능 및 임상상의 변화에 주의하시고, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 용법의 적절성을 재평가하시기 바랍니다',
-                                                                         'rec2_Toxic곧Non-toxic투약재개': '그러나 이를 기반으로 산출되는 [당일 예상 투약시점 (시간)] 농도는 [당일 예상 투약시점의 예상 농도] mcg/mL 로 Non-toxic level 예상되어 이후 투약 재개해볼 수 있습니다.\n\n2. 투약 재개를 고려하시는 경우 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 재개 가능합니다. 현재 약물배설능이 유지됨을 가정할 때 예상되는 항정상태 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                                         'rec2_NonToxic투약재개': '투약 재개 가능합니다.\n\n2. 투약 재개를 고려하시는 경우 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 재개 가능합니다. 현재 약물배설능이 유지됨을 가정할 때 예상되는 항정상태 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-
-                                                 },
-                                       },
-                               'VCM': {'Subtherapeutic':{'rec1_SS':'1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec1_NSS':'1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec2_공통':'2. 적극적인 감염 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 변경 용법의 적절성을 재확인하시기 바랍니다.',
-                                                         },
-                                       'Lowermargin':{'rec1_SS':'1. Lower margin of therapeutic Level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                      'rec1_NSS':'1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                      'rec2_공통':'2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                      },
-                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통':'2. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 유지 용법의 적절성을 재확인하시기 바랍니다.',
-                                                       },
-
-                                       'Highpeak': {'rec1_SS': '1. Therapeutic level이나, 다소 높은 peak level로 인한 독성 증상의 예방을 위하여 용법 변경 권장합니다.\n\n',
-                                                    'rec1_NSS': '1. Therapeutic level에 이를 것으로 예상되나, 다소 높은 peak level로 인한 독성 증상의 예방을 위하여 용법 변경 권장합니다.\n\n',
-                                                    'rec2_공통':'2. 독성 증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                    },
-                                       'Uppermargin': {'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',},
-                                       'Toxic': {'rec1_SS':'1. Toxic level입니다. ',
-                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Toxic level에 이를 것으로 예상됩니다. ',
-                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
-                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 예정되어있는 다음 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분전 및 투약 1시간 후 채혈로 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
-                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 신기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 투약 재개 시점 및 재개 용법을 재확인하시기 바랍니다.',
-                                                 },
-                                       },
-                               'DGX': {'Subtherapeutic':{'rec1_SS':'1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec1_NSS':'1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec2_공통':'2. 적극적인 증상 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
-                                                         },
-                                       'Lowermargin':{'rec1_SS':'1. Lower margin of therapeutic level입니다. 증상 조절이 원활하다면 현 용법을 유지할 수 있습니다.\n\n',
-                                                      'rec1_NSS':'1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 증상 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                      'rec2_공통':'2. 적극적인 증상 조절을 위해 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
-                                                      },
-                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통':'2. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
-                                                       },
-                                       'Uppermargin': {'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Upper margin of therapeutic level에 이를 것으로 예상됩니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',},
-                                       'Toxic': {'rec1_SS':'1. Toxic level입니다. ',
-                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Toxic level에 도달할 것으로 예상됩니다. ',
-                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약 [기존예정된투약일(요일,시간)] 부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
-                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 예정되어있는 다음 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
-                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. K/Ca level, 신기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규채혈로 TDM 재의뢰하시어 재개 가능 여부를 재확인 하시기 바랍니다.',
-                                                 },
-                                       },
-                               'VPA': {'Subtherapeutic':{'rec1_SS':'1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec1_NSS':'1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec2_공통':'2. 적극적인 증상 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)]로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
-                                                         },
-                                       'Lowermargin':{'rec1_SS':'1. Lower margin of therapeutic level입니다. 증상 조절이 원활하다면 현 용법을 유지할 수 있습니다.\n\n',
-                                                      'rec1_NSS':'1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 증상 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                      'rec2_공통':'2. 적극적인 증상 조절을 위해 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                      },
-                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통':'2. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                       },
-                                       'Uppermargin': {'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Upper margin of therapeutic level에 이를 것으로 예상됩니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',},
-                                       'Toxic': {'rec1_SS':'1. Toxic level입니다. ',
-                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Toxic level에 도달할 것으로 예상됩니다. ',
-                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n',
-                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성 증상 발현 예방을 위하여 다음 예정된 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규채혈로 TDM 재의뢰하시어 재개 가능 여부를 재확인 하시기 바랍니다.',
-                                                 },
-                                       },
-                               'GTM': {'Subtherapeutic':{'rec1_SS':'1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec1_NSS':'1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
-                                                         'rec2_공통':'2. 적극적인 감염 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 변경 용법의 적절성을 재확인하시기 바랍니다.',
-                                                         },
-                                       'Lowermargin':{'rec1_SS':'1. Lower margin of therapeutic Level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                      'rec1_NSS':'1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                      'rec2_공통':'2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                      },
-                                       'LMofPeak':{'rec1_SS':'1. Lower margin of therapeutic peak level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                   'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Lower margin of therapeutic peak level에 이를 것으로 예상됩니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
-                                                   'rec2_공통':'2. 적극적인 감염 조절을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                   },
-                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통':'2. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 유지 용법의 적절성을 재확인하시기 바랍니다.',
-                                                       },
-                                       'Uppermargin': {'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                       'rec2_공통':'2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                       },
-                                       'UMofPeak': {'rec1_SS': '1. Upper margin of therapeutic peak level 입니다. 적극적인 감염 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                    'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Upper margin of therapeutic peak level에 이를 것으로 예상되나 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
-                                                    'rec2_공통':'2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
-                                                    },
-                                       'Toxic': {'rec1_SS':'1. Toxic level입니다. ',
-                                                 'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Toxic level에 이를 것으로 예상됩니다. ',
-                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
-                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 예정되어있는 다음 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 용법 변경의 적절성을 재확인하시기 바랍니다.',
-                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 신기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 투약 재개 시점 및 재개 용법을 재확인하시기 바랍니다.',
-                                                 },
-                                       },
-                               }
 
         self.threshold_dict = {"AMK": {'toxic': 25.1, 'upper_margin':24.9, 'lower_margin':5.1, 'subthera': 4.9},
                                "VCM": {'toxic': 610, 'upper_margin':590, 'lower_margin':410, 'subthera': 395},
