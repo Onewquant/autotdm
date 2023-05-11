@@ -322,7 +322,7 @@ class snubh_cpt_tdm(tdm):
 
             with self.rcol1:
 
-                st.write(f"<참고> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
+                st.write(f"<Ref> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
 
                 additional_inputs = self.additional_pt_term_dict[self.short_drugname_dict[st.session_state['drug']]]
                 # if len(additional_inputs)==0: pass
@@ -343,12 +343,18 @@ class snubh_cpt_tdm(tdm):
 
                 st.divider()
 
+                st.write(f"<PK parameters 입력>")
+
                 self.define_ir_info()
 
                 for k, v in self.ir_term_dict[self.short_drugname_dict[st.session_state['drug']]].items():
                     st.number_input(label=v, min_value=0.1, max_value=1000.0, step=1.0, key=k)
 
                 st.button('reflect parameters', on_click=self.reflecting_parameters, key='reflect_parameters')
+
+                st.divider()
+
+                st.write(f"<Concentration Level & Recommendations>")
 
                 self.ir_drug_dict = self.ir_recomm_dict[self.short_drugname_dict[st.session_state['drug']]]
 
