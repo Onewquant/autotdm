@@ -413,7 +413,8 @@ class snubh_cpt_tdm(tdm):
 
     def retry_execution(self):
 
-        st.session_state['tdm_date'] = datetime.today()
+        if st.session_state['tdm_date'] == datetime.today(): pass
+        else: st.session_state['tdm_date'] = datetime.today()
         st.session_state['id'] = ''
         st.session_state['name'] = ''
         st.session_state['sex'] = '남'
@@ -421,10 +422,6 @@ class snubh_cpt_tdm(tdm):
         st.session_state['height'] = 1.0
         st.session_state['weight'] = 1.0
         st.session_state['drug'] = '약물을 입력하세요'
-
-        # for k, v in self.basic_pt_term_dict.items():
-        #     if k=='tdm_date': continue
-        #     st.session_state[k] = ''
 
 
     def individual_vars(self):
