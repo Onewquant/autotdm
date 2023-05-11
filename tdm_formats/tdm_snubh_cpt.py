@@ -315,6 +315,9 @@ class snubh_cpt_tdm(tdm):
 
         if st.session_state['drug']!='약물을 입력하세요':
 
+            self.tdm_writer = st.session_state['tdm_writer']
+            self.tdm_date = st.session_state['tdm_date'].strftime('%Y-%m-%d')
+            self.pt_dict['tdm_date'] = self.tdm_date
             self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
             with self.rcol1:
@@ -363,9 +366,9 @@ class snubh_cpt_tdm(tdm):
 
     def execution_of_generating_first_draft(self):
 
-        self.tdm_writer = st.session_state['tdm_writer']
-        self.tdm_date = st.session_state['tdm_date'].strftime('%Y-%m-%d')
-        self.pt_dict['tdm_date'] = self.tdm_date
+        # self.tdm_writer = st.session_state['tdm_writer']
+        # self.tdm_date = st.session_state['tdm_date'].strftime('%Y-%m-%d')
+        # self.pt_dict['tdm_date'] = self.tdm_date
         # self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
         for k, v in st.session_state.items():
