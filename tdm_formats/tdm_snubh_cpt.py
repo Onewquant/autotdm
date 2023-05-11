@@ -315,6 +315,8 @@ class snubh_cpt_tdm(tdm):
 
         if st.session_state['drug']!='약물을 입력하세요':
 
+            self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
+
             with self.rcol1:
 
                 st.write(f"<참고> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
@@ -364,7 +366,7 @@ class snubh_cpt_tdm(tdm):
         self.tdm_writer = st.session_state['tdm_writer']
         self.tdm_date = st.session_state['tdm_date'].strftime('%Y-%m-%d')
         self.pt_dict['tdm_date'] = self.tdm_date
-        self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
+        # self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
         for k, v in st.session_state.items():
             if k in ('tdm_inst', 'tdm_date', 'drug', 'first_draft'):continue
