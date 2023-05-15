@@ -834,7 +834,7 @@ class snubh_cpt_tdm(tdm):
         # order_str = self.pt_dict['order']
         # order_str='j'
         raw_order_str_list = order_str.split('\n')
-        # if len(raw_order_str_list)==0: return self.order_df
+        if len(raw_order_str_list)==0: return self.order_df
 
         # for inx, row in self.order_df.iterrows(): break
 
