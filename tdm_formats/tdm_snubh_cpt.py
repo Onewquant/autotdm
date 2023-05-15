@@ -833,8 +833,8 @@ class snubh_cpt_tdm(tdm):
         # order_str = input().strip()
         # order_str = self.pt_dict['order']
         # order_str='j'
+        ''.split('\n')
         raw_order_str_list = order_str.split('\n')
-        if len(raw_order_str_list)==0: return self.order_df
 
         # for inx, row in self.order_df.iterrows(): break
 
@@ -842,11 +842,15 @@ class snubh_cpt_tdm(tdm):
         for row in raw_order_str_list:
             if '\t' not in row: continue
             parsed_order_list.append(dict(list(zip(self.raw_order_cols, row.split('\t')))))
-        if (len(parsed_order_list)==1):
+
+        if (len(parsed_order_list)==0):
+            return self.order_df
+        elif (len(parsed_order_list)==1):
             if len(list(parsed_order_list[0].keys()))==1:
                 if (list(parsed_order_list[0].keys())[-1])=='처방지시':
                     self.order_df = pd.DataFrame(columns=['처방지시', '발행처', '발행의', '수납', '약국/검사', '주사시행처', 'Acting', '변경의'])
                     return self.order_df
+        else: pass
         # self.result_order_cols
         self.order_df = pd.DataFrame(parsed_order_list)
 
