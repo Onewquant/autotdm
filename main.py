@@ -27,6 +27,8 @@ def retry_button():
 def download_button():
     pass
 
+st.set_page_config(layout="wide")
+
 with st.sidebar:
     st.title('TDM Practice')
 
