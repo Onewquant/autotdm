@@ -840,6 +840,7 @@ class snubh_cpt_tdm(tdm):
 
         parsed_order_list = list()
         for row in raw_order_str_list:
+            if '\t' not in row: continue
             parsed_order_list.append(dict(list(zip(self.raw_order_cols, row.split('\t')))))
         if (len(parsed_order_list)==1):
             if len(list(parsed_order_list[0].keys()))==1:
