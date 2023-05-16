@@ -1,6 +1,9 @@
 import re, os
 import pandas as pd
 import numpy as np
+import streamlit
+import streamlit.proto.Spinner_pb2
+
 from tdm_formats.tdm import *
 from datetime import datetime, timedelta
 import json
@@ -329,6 +332,7 @@ class snubh_cpt_tdm(tdm):
                 # else:
                 for k, v in additional_inputs.items():
                     if k == 'consult':
+                        # st.session_state[k]= self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
                         continue
                     else:
                         st.text_area(v, key=k)
@@ -751,9 +755,11 @@ class snubh_cpt_tdm(tdm):
 
     def get_pt_hx_df(self, hx_str, type_filt=''):
         # hx_str = self.pt_hx_raw
+
         hx_parsing_list = [hx_str]
 
         # for htype in self.hx_type_tups: break
+        # for htype in hx_type_tups: break
         for htype in self.hx_type_tups:
             new_parsing_list = list()
             mid_parsing_list = list()
@@ -2352,7 +2358,7 @@ class snubh_cpt_tdm(tdm):
             if k == 'hemodialysis':
                 add_msg = f'\n<참고> 환자등록번호 : {self.pt_dict["id"]} / 이름 : {self.pt_dict["name"]}'
             elif k == 'consult':
-                self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
+                # self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
                 continue
 
             elif k == 'order': add_msg = f'\n<참고> 환자등록번호 : {self.pt_dict["id"]} / 이름 : {self.pt_dict["name"]}'
@@ -2431,6 +2437,7 @@ class snubh_cpt_tdm(tdm):
                 else:
                     self.pt_hx_df = self.get_pt_hx_df(hx_str=self.pt_hx_raw)
                     value = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=key)
+                    # value = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
                 self.input_recording(key=key, value=value)
                 return True, value
             else: return False, ''

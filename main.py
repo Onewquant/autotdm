@@ -50,6 +50,7 @@ with st.sidebar:
 
     # monitoring_str = '{'
     # for k, v in st.session_state.items():
+    #     if k!='monitor': continue
     #     monitoring_str += f"'{k}': '{v}',\n"
     # monitoring_str += '}'
     # st.text_area('모니터링', monitoring_str)
