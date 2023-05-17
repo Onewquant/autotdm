@@ -299,13 +299,15 @@ class snubh_cpt_tdm(tdm):
                     continue
                 elif k=='age':
                     st.number_input(label=v, min_value=1 ,max_value=120, step=1, key=k)
+                    if st.session_state['age'] <= 18:
+                        st.session_state['pedi'] = True
+                        self.pt_dict['pedi'] = True
+                    else:
+                        st.session_state['pedi'] = False
+                        self.pt_dict['pedi'] = False
                 elif k in ('height','weight'):
                     st.number_input(label=v, min_value=0.1 ,max_value=300.0, step=1.0, key=k)
                 elif k=='pedi':
-                    if st.session_state['age'] <= 18:
-                        st.session_state['pedi'] = True
-                    else:
-                        st.session_state['pedi'] = False
                     continue
                 elif k=='drug':
                     st.selectbox(v, ('약물을 입력하세요','Vancomycin', 'Amikacin', 'Gentamicin', 'Digoxin', 'Valproic Acid', 'Phenytoin'), key=k)
@@ -386,10 +388,6 @@ class snubh_cpt_tdm(tdm):
                 self.pt_dict[k]= 'M' if v=='남' else 'F'
             elif k=='age':
                 self.pt_dict[k] = v
-                if v <= 18:
-                    self.pt_dict['pedi'] = True
-                else:
-                    self.pt_dict['pedi'] = False
             elif k=='history':
                 self.pt_hx_raw = self.get_reduced_sentence(v)
                 if self.pt_hx_raw != '':
@@ -906,6 +904,8 @@ class snubh_cpt_tdm(tdm):
                 for m in range(1, 3): hc_text = hc_text.replace(f'-1\n{m}-', f'-1{m}-')
 
             ## 타과회신(기저질환항목)에서 추출
+            # st.session_state['monitor'] = f"Drug : {self.pt_dict['drug']}\nPedi : {self.pt_dict['pedi']}"
+            # st.session_state['monitor'] = f"Drug : {self.pt_dict['pedi']}"
             drug_cslt_dep = self.drug_consult_dict[self.pt_dict['drug']] if not self.pt_dict['pedi'] else '소아청소년과'
 
             if len(hx_df[hx_df['type'] == '타과회신']) > 0:
