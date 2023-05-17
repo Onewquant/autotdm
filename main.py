@@ -46,12 +46,12 @@ with st.sidebar:
     with scol2:
         st.button('Re-try', on_click=retry_button)
 
-    monitoring_str = '{'
-    for k, v in st.session_state.items():
-        if k!='monitor': continue
-        monitoring_str += f"'{k}': '{v}',\n"
-    monitoring_str += '}'
-    st.text_area('모니터링', monitoring_str)
+    # monitoring_str = '{'
+    # for k, v in st.session_state.items():
+    #     if k!='monitor': continue
+    #     monitoring_str += f"'{k}': '{v}',\n"
+    # monitoring_str += '}'
+    # st.text_area('모니터링', monitoring_str)
 
 if (st.session_state['hospital']=='병원을 선택하세요') and (st.session_state['tdm_division']=='병원을 선택하세요'):
    pass
