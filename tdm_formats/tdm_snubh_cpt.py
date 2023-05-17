@@ -1044,7 +1044,7 @@ class snubh_cpt_tdm(tdm):
                 #     parsed_str+=additional_text
 
         else: parsed_str = 'empty'
-        return parsed_str
+        return parsed_str.strip()
 
     def get_lab_text(self, drug):
         # drug = self.pt_dict['drug']
