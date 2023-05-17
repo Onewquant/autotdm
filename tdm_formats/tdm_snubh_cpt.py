@@ -395,7 +395,9 @@ class snubh_cpt_tdm(tdm):
                 self.pt_hx_raw = self.get_reduced_sentence(v)
                 if self.pt_hx_raw != '':
                     self.pt_hx_df = self.get_pt_hx_df(hx_str=self.pt_hx_raw)
+                    st.session_state['monitor'] = self.pt_hx_df
                     self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
+                    # st.session_state['monitor'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
                     self.pt_dict['consult'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
                 else:
                     self.pt_dict[k] = ''
@@ -423,8 +425,8 @@ class snubh_cpt_tdm(tdm):
 
     def retry_execution(self):
 
-        if st.session_state['tdm_date'] == datetime.today(): pass
-        else: st.session_state['tdm_date'] = datetime.today()
+        if st.session_state.tdm_date == datetime.today(): pass
+        else: st.session_state.tdm_date = datetime.today()
         st.session_state['id'] = ''
         st.session_state['name'] = ''
         st.session_state['sex'] = '남'
