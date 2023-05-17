@@ -1,19 +1,18 @@
 from tdm_import import *
 
-"""
-## 오프라인 테스트 실행
-
-from tdm_import import *
-
-self = snubh_cpt_tdm()
-self.offline_execution_main()
-self.generate_tdm_reply_text()
-self.save_result_offline()
-self.open_result_txt()
-calc_text = self.offline_get_interpretation_and_recommendation_text(drug=self.pt_dict['drug'])
-ir_text = self.offline_ir_text_generator(mode='manual', drug=self.pt_dict['drug'])
-"""
-
+# """
+# ## 오프라인 테스트 실행
+#
+# from tdm_import import *
+#
+# self = snubh_cpt_tdm()
+# self.offline_execution_main()
+# self.generate_tdm_reply_text()
+# self.save_result_offline()
+# self.open_result_txt()
+# calc_text = self.offline_get_interpretation_and_recommendation_text(drug=self.pt_dict['drug'])
+# ir_text = self.offline_ir_text_generator(mode='manual', drug=self.pt_dict['drug'])
+# """
 
 def reset_button():
     st.session_state.tdm_date = datetime.today()
@@ -47,12 +46,12 @@ with st.sidebar:
     with scol2:
         st.button('Re-try', on_click=retry_button)
 
-    monitoring_str = '{'
-    for k, v in st.session_state.items():
-        if k!='monitor': continue
-        monitoring_str += f"'{k}': '{v}',\n"
-    monitoring_str += '}'
-    st.text_area('모니터링', monitoring_str)
+    # monitoring_str = '{'
+    # for k, v in st.session_state.items():
+    #     if k!='monitor': continue
+    #     monitoring_str += f"'{k}': '{v}',\n"
+    # monitoring_str += '}'
+    # st.text_area('모니터링', monitoring_str)
 
 if (st.session_state['hospital']=='병원을 선택하세요') and (st.session_state['tdm_division']=='병원을 선택하세요'):
    pass

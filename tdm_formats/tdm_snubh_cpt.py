@@ -32,7 +32,6 @@ def get_result_text_from_file(drug='', name='', id='', tdm_date='', rootpath=f'{
     with open(filepath, "r", encoding="utf-8-sig") as f:
         rtext = f.read()
 
-
 def get_tdm_dateform(date_str):
     dstr_list = list()
     for dstr in date_str.split('-')[1:]:
@@ -2363,7 +2362,7 @@ class snubh_cpt_tdm(tdm):
             if k == 'hemodialysis':
                 add_msg = f'\n<참고> 환자등록번호 : {self.pt_dict["id"]} / 이름 : {self.pt_dict["name"]}'
             elif k == 'consult':
-                # self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
+                self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
                 continue
 
             elif k == 'order': add_msg = f'\n<참고> 환자등록번호 : {self.pt_dict["id"]} / 이름 : {self.pt_dict["name"]}'
@@ -2505,120 +2504,8 @@ class snubh_cpt_tdm(tdm):
                 input_record_filepath = f"{self.inputrecord_dir}/{self.input_record_dirname}/{key}_{self.pt_dict['name']}.txt"
                 with open(input_record_filepath, "w", encoding="utf-8-sig") as f: f.write(value)
 
+                self.get_parsed_lab_df(value)
 
-                raw_ldf_cols = ['보고일', '오더일', '검사명', '검사결과', '직전결과', '참고치', '결과비고', '오더비고']
-                raw_ldf = pd.DataFrame([tbl_row.split('\t') for tbl_row in value.split('\n')])
-                cur_rldf_cols = list(raw_ldf.columns)
-                vld_rldf_cols = list()
-                for i in range(len(cur_rldf_cols)):
-                    if i + 1 > len(cur_rldf_cols):
-                        vld_rldf_cols.append(str(i))
-                    else:
-                        vld_rldf_cols.append(raw_ldf_cols[i])
-
-                raw_ldf.columns = vld_rldf_cols
-                # print(raw_ldf)
-
-
-                for inx, rrow in raw_ldf.iterrows():
-                    if (rrow['검사명']=='WBC') and ('HPF' in rrow['참고치']):
-                        raw_ldf.at[inx,'검사명'] = 'u.WBC'
-                    elif (rrow['검사명']=='RBC') and ('HPF' in rrow['참고치']):
-                        raw_ldf.at[inx,'검사명'] = 'u.RBC'
-
-                # raw_ldf['검사명'].unique()
-                # raw_ldf['date'] =
-                raw_ldf['검사명'] = raw_ldf['검사명'].map(lambda x:x.strip())
-                raw_ldf['dt_raw'] = raw_ldf[['보고일', '오더일']].min(axis=1) + 'T00:00:00'
-                raw_ldf_list = list()
-                # for dt, frag_ldf in raw_ldf[['dt_raw', '검사명', '검사결과']].groupby(['dt_raw']):break
-                for dt, frag_ldf in raw_ldf[['dt_raw', '검사명', '검사결과']].groupby(['dt_raw']):
-                    frag_ldf = frag_ldf.reset_index(drop=True)
-                    frag_ldf['index'] = frag_ldf.index
-                    frag_ldf['dt'] = frag_ldf[['dt_raw', 'index']].apply(lambda x: (datetime.strptime(x['dt_raw'], '%Y-%m-%dT%H:%M:%S') + timedelta(seconds=int(x['index']))).strftime('%Y-%m-%dT%H:%M:%S'), axis=1)
-                    #
-                    # for smdtlab_dict in [{'WBC':0, 'Seg.neut.':0, 'ANC':0}, {'Ca':0, 'total':0, 'K':0}, {'BUN':0, 'Cr (S)':0}]: break
-                    for smdtlab_dict in [{'WBC':0, 'Seg.neut.':0, 'ANC':0}, {'Ca, total':0, 'K':0}, {'BUN':0, 'Cr (S)':0, 'Creatinine':0}, {'Platelet':0, 'PT %':0, 'aPTT':0}]:
-                        smdtlab_df = frag_ldf[frag_ldf['검사명'].isin(smdtlab_dict.keys())].copy()
-                        if len(smdtlab_df)==0: continue
-                        smdt = smdtlab_df['dt'].min()
-                        smdtlab_df['dt'] = smdt
-                        # for smdinx, smdrow in smdtlab_df.iterrows():break
-                        for smdinx, smdrow in smdtlab_df.iterrows():
-                            frag_ldf.at[smdinx, 'dt'] = (datetime.strptime(smdrow['dt'], '%Y-%m-%dT%H:%M:%S') + timedelta(seconds=smdtlab_dict[smdrow['검사명']])).strftime('%Y-%m-%dT%H:%M:%S')
-                            smdtlab_dict[smdrow['검사명']]+=1
-
-                    raw_ldf_list.append(frag_ldf[['dt', '검사명', '검사결과']].copy())
-                raw_ldf = pd.concat(raw_ldf_list, ignore_index=True).reset_index(drop=True)
-
-                raw_ldf = raw_ldf.pivot(index='dt', columns='검사명', values='검사결과')
-                raw_ldf.columns.name = None
-                raw_ldf = raw_ldf.reset_index(drop=False)
-                # self.re_ldf.columns
-                self.re_ldf = raw_ldf.copy()
-
-                # self.re_ldf = self.re_ldf.reset_index(drop=False).rename(columns={'index':'dt'})
-                # self.re_ldf['dt'] = self.re_ldf['dt'].map(lambda x:x.strftime('%Y-%m-%dT%H:%M:%S'))
-                self.re_ldf['date'] = self.re_ldf['dt'].map(lambda x:x.split('T')[0])
-                raw_clist = list(self.re_ldf.columns)
-                raw_cser = pd.Series(raw_clist)
-                raw_cset = set(self.re_ldf.columns)
-
-                dup_cols = [c for c in raw_cset if (raw_cser==c).sum() > 1]
-                uniq_cols = list(raw_cset - set(dup_cols))
-                res_cols = list(raw_cser.drop_duplicates(keep='first'))
-
-                # for c in dup_cols[1:]: break
-                self.ldf = self.re_ldf[uniq_cols].copy()
-                for c in dup_cols:
-                    newc_ds = pd.Series(np.full(len(self.re_ldf),np.nan),index=list(self.re_ldf.index))
-                    for cinx, crow in self.re_ldf[c].iterrows():
-                        # crow = self.re_ldf[c].iloc[0]
-                        crow_uniq = crow.drop_duplicates(keep='first')
-                        crow_uniq = crow_uniq.map(lambda x:x if type(x)==float else np.nan).drop_duplicates(keep='first')
-                        nv_data_cond = ((len(crow_uniq.values)==1) and (np.isnan(crow_uniq.iat[0])))
-                        newc_ds.at[cinx] = np.nan if nv_data_cond else np.nanmax(crow)
-                    self.ldf[c] = newc_ds.copy()
-
-                self.ldf = self.ldf[res_cols].sort_values(by=['dt'], ascending=False, ignore_index=True)
-
-                ## Cr (S) 와 Creatinine 병합
-
-                ldf_cols = list(self.ldf.columns)
-                cr_list = ['Cr (S)', 'Creatinine']
-                if ('Cr (S)' in ldf_cols) and ('Creatinine' in ldf_cols):
-                    # linx=5,
-                    # lrow=self.ldf[cr_list].iloc[linx]
-                    for linx, lrow in self.ldf[cr_list].iterrows():
-                        cr_vals = []
-                        for cr in cr_list:
-                            if type(lrow[cr])==float:
-                                cr_vals.append(lrow[cr])
-                                continue
-                            elif type(lrow[cr])==str:
-                                if lrow[cr] in ('', '-', '.'):
-                                    cr_vals.append(np.nan)
-                                else:
-                                    cr_vals.append(float(lrow[cr].replace('<', '').replace('>', '')))
-                        self.ldf.at[linx,'Cr (S)'] = max(cr_vals)
-                elif ('Cr (S)' not in ldf_cols) and ('Creatinine' in ldf_cols):
-                    self.ldf['Cr (S)']=np.nan
-                    for linx, lrow in self.ldf[cr_list].iterrows():
-                        cr_list = ['Creatinine',]
-                        cr_vals = []
-                        for cr in cr_list:
-                            if type(lrow[cr])==float:
-                                cr_vals.append(lrow[cr])
-                                continue
-                            elif type(lrow[cr])==str:
-                                if lrow[cr] in ('', '-', '.'):
-                                    cr_vals.append(np.nan)
-                                else:
-                                    cr_vals.append(float(lrow[cr].replace('<', '').replace('>', '')))
-                        self.ldf.at[linx,'Cr (S)'] = max(cr_vals)
-
-
-                # self.ldf[['dt','WBC', 'Seg.neut.', 'ANC', 'Ca, total', 'K', 'BUN', 'Cr (S)', 'Creatinine']].to_csv(f"{self.inputfiles_dir}/lab.csv", encoding="utf-8-sig", index=False)
                 return True, self.ldf
 
         elif key == 'order':
