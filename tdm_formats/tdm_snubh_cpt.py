@@ -395,7 +395,7 @@ class snubh_cpt_tdm(tdm):
                 self.pt_hx_raw = self.get_reduced_sentence(v)
                 if self.pt_hx_raw != '':
                     self.pt_hx_df = self.get_pt_hx_df(hx_str=self.pt_hx_raw)
-                    st.session_state['monitor'] = self.pt_hx_df
+                    # st.session_state['monitor'] = self.pt_hx_df
                     self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
                     # st.session_state['monitor'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
                     self.pt_dict['consult'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
@@ -572,12 +572,17 @@ class snubh_cpt_tdm(tdm):
         if (len(raw_ldf.columns)==1) or (len(raw_ldf)<=1):
             self.ldf = pd.DataFrame(columns=['date','dt'])
             return self.ldf
+        # self.ldf[~self.ldf['Creatinine'].isna()]
+
 
         for inx, rrow in raw_ldf.iterrows():
             if (rrow['검사명'] == 'WBC') and ('HPF' in rrow['참고치']):
                 raw_ldf.at[inx, '검사명'] = 'u.WBC'
+            elif (rrow['검사명'] == 'WBC') and ('mm³' in rrow['참고치']):
+                raw_ldf.at[inx, '검사명'] = 'em.WBC'
             elif (rrow['검사명'] == 'RBC') and ('HPF' in rrow['참고치']):
                 raw_ldf.at[inx, '검사명'] = 'u.RBC'
+
 
         # raw_ldf['검사명'].unique()
         # raw_ldf['date'] =
@@ -644,8 +649,6 @@ class snubh_cpt_tdm(tdm):
         ldf_cols = list(self.ldf.columns)
         cr_list = ['Cr (S)', 'Creatinine']
         if ('Cr (S)' in ldf_cols) and ('Creatinine' in ldf_cols):
-            # linx=5,
-            # lrow=self.ldf[cr_list].iloc[linx]
             for linx, lrow in self.ldf[cr_list].iterrows():
                 cr_vals = []
                 for cr in cr_list:
@@ -657,7 +660,7 @@ class snubh_cpt_tdm(tdm):
                             cr_vals.append(np.nan)
                         else:
                             cr_vals.append(float(lrow[cr].replace('<', '').replace('>', '')))
-                self.ldf.at[linx, 'Cr (S)'] = max(cr_vals)
+                self.ldf.at[linx, 'Cr (S)'] = np.nanmax(cr_vals)
         elif ('Cr (S)' not in ldf_cols) and ('Creatinine' in ldf_cols):
             self.ldf['Cr (S)'] = np.nan
             for linx, lrow in self.ldf[cr_list].iterrows():
@@ -672,7 +675,7 @@ class snubh_cpt_tdm(tdm):
                             cr_vals.append(np.nan)
                         else:
                             cr_vals.append(float(lrow[cr].replace('<', '').replace('>', '')))
-                self.ldf.at[linx, 'Cr (S)'] = max(cr_vals)
+                self.ldf.at[linx, 'Cr (S)'] = np.nanmax(cr_vals)
 
         return self.ldf
 
