@@ -393,8 +393,9 @@ class snubh_cpt_tdm(tdm):
                 if self.pt_hx_raw != '':
                     self.pt_hx_df = self.get_pt_hx_df(hx_str=self.pt_hx_raw)
                     # st.session_state['monitor'] = self.pt_hx_df
+                    # st.session_state['monitor'] = self.pt_dict['pedi']
                     self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
-                    # st.session_state['monitor'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
+                    # st.session_state['monitor'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
                     self.pt_dict['consult'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
                 else:
                     self.pt_dict[k] = ''
@@ -804,13 +805,14 @@ class snubh_cpt_tdm(tdm):
             q_doc = ''
             r_dep = ''
             r_doc = ''
-
+            # st.session_state['monitor'] = s
             cslt_q_split = s.split('의뢰진료과\n')
             if len(cslt_q_split) > 1:
                 q_dep = cslt_q_split[-1].split('의뢰의사\n')[0].replace('\n', '').strip()
                 q_doc = cslt_q_split[-1].split('의뢰의사\n')[-1].split('수신진료과\n')[0].replace('\n', '').strip()
 
             cslt_r_split = s.split('수신진료과\n')
+
             if len(cslt_r_split)>1:
                 r_dep = cslt_r_split[-1].split('수신인\n')[0].replace('\n','').strip()
                 r_doc = cslt_r_split[-1].split('수신인\n')[-1].split('응급여부:')[0].replace('\n','').strip()
@@ -819,6 +821,7 @@ class snubh_cpt_tdm(tdm):
             if ('작성자\n' in s) or ('\n작성자' in s):
                 writer_cand_s = s.split('작성자\n')[-1].split('\n작성자')[-1]
                 w_doc = writer_cand_s.replace('\n','').replace(' ','').split(s_date)[0].strip()
+
 
             final_parsing_list.append({'type':s_type, 'department':s_dep, 'date':s_date,'writer': w_doc, 'cslt_q_dep':q_dep, 'cslt_q_doc':q_doc, 'cslt_r_dep':r_dep, 'cslt_r_doc':r_doc, 'text':s_text})
 
@@ -943,6 +946,7 @@ class snubh_cpt_tdm(tdm):
             parsed_str = cont_type + " parsed"
         elif cont_type == 'consult':
             drug_cslt_dep = self.drug_consult_dict[self.pt_dict['drug']] if not self.pt_dict['pedi'] else '소아청소년과'
+
             parsed_str = ''
             if drug_cslt_dep=='':pass
             else:
@@ -959,10 +963,16 @@ class snubh_cpt_tdm(tdm):
                 # csltinx = 1
                 # csltrow = cslt_df.iloc[csltinx]
                 # for csltinx, csltrow in cslt_df.iterrows(): break
+                # st.session_state['monitor'] = cslt_df[['type','text']]
                 for csltinx, csltrow in cslt_df.iterrows():
+                    # if csltinx==3: break
+                    # st.session_state['monitor'] = csltrow['cslt_r_dep']
+                    # st.session_state['monitor'] = csltrow
+                    # if csltinx==1: break
                     if csltrow['type']=='타과회신': continue
-                    elif (csltrow['type']=='타과의뢰') and (drug_cslt_dep not in csltrow['cslt_r_dep']): continue
+                    # elif (csltrow['type']=='타과의뢰') and (drug_cslt_dep not in csltrow['cslt_r_dep']): continue
                     else: pass
+
                     if csltinx != last_cslt_q_inx:
                         next_q_inx = cslt_q_df[cslt_q_df.index > csltinx].iloc[0].name
                     else: next_q_inx = np.inf
@@ -979,20 +989,19 @@ class snubh_cpt_tdm(tdm):
                     else: pass
 
                     r_cand_row = r_cands.iloc[-1]
-                    infomatch_cond = ((r_cand_row['department'] in csltrow['cslt_r_dep']) or ((csltrow['cslt_r_dep'] in ('심장혈관센터', '순환기내과', '순환기내과(심장혈관센터)', '신경과', '신경과(뇌신경센터)')) and (r_cand_row['department'] in ('심장혈관센터', '순환기내과', '순환기내과(심장혈관센터)', '신경과', '신경과(뇌신경센터)'))))
-                    if infomatch_cond:
-                        cslt_pair_list.append({'cslt_inx':csltinx, 'cslt_q_row':csltrow, 'cslt_r_row':r_cand_row})
-                    else:
-                        print('의뢰, 회신 정보가 일치하지 않습니다. 확인해주세요')
-                        print(csltrow)
-                        print(r_cand_row)
-                        raise ValueError
 
-                        # csltrow['text']
-                        # r_cand_row['text']
+                    ## consult 과 매칭 로직 deprecated (에러발생으로_사용자가 필요한 과 COnsult 잘 넣는 것으로 !)
+                    # infomatch_cond = ((r_cand_row['department'] in csltrow['cslt_r_dep']) or ((csltrow['cslt_r_dep'] in ('심장혈관센터', '순환기내과', '순환기내과(심장혈관센터)', '신경과', '신경과(뇌신경센터)')) and (r_cand_row['department'] in ('심장혈관센터', '순환기내과', '순환기내과(심장혈관센터)', '신경과', '신경과(뇌신경센터)'))))
+                    # if infomatch_cond:
+                    #     cslt_pair_list.append({'cslt_inx':csltinx, 'cslt_q_row':csltrow, 'cslt_r_row':r_cand_row})
+                    # else:
+                    #     print('의뢰, 회신 정보가 일치하지 않습니다. 확인해주세요')
+                    #     print(csltrow)
+                    #     print(r_cand_row)
+                    #     raise ValueError
 
                     ## 의뢰텍스트 파싱
-
+                    # st.session_state['monitor'] = csltrow['text']
                     cslt_q_text_raw = csltrow['text']
                     text_for_abx_exam_check = cslt_q_text_raw.replace('\n','').replace(' ','')
                     if (drug_cslt_dep=='감염내과') and ("[오더발행]" in text_for_abx_exam_check) and ("[동정결과]" in text_for_abx_exam_check) and ("[중간보고]" in text_for_abx_exam_check):
@@ -1005,26 +1014,49 @@ class snubh_cpt_tdm(tdm):
 
                         cslt_q_text_raw = before_abx_exam_check+abx_exam_check+after_abx_exam_check
 
-                    cslt_q_text = ''
+                    cslt_q_text = cslt_q_text_raw
                     replace_tups = [(' - ', '-'), (' / ', '/'), ('s/p\n', 's/p '), ('\n.', '.'), ('\n', ' '), ('  ', '\n')]
-                    try:cslt_q_text = cslt_q_text_raw.split('의뢰내용\n')[-1].split('안녕하십니까.\n')[-1].split('안녕하십니까\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('의견\n')[1]
-                    except:
-                        try:cslt_q_text = cslt_q_text_raw.split('의뢰내용\n')[-1].split('안녕하십니까.\n')[-1].split('안녕하십니까\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('Opinions or Recommendations\n')[1]
-                        except:cslt_q_text = cslt_q_text_raw.split('의뢰내용\n')[-1].split('안녕하십니까.\n')[-1].split('안녕하십니까\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('감사합니다.')[0].split('감사합니다')[0]
+                    elimlist_dict = {0:['의뢰내용\n', '제한항생제 투여 사유 : ', '안녕하십니까.','안녕하십니까,', '안녕하십니까', '선택제한항생제', '*제한항생제\n투여\n사유:'],
+                                     1:['작성자\n', '\n작성자','Opinions or Recommendations\n'],
+                                           }
+                    for eliminx, elimlist in elimlist_dict.items():
+                        for elimmargin in elimlist:
+                            cslt_q_text = cslt_q_text.split(elimmargin)[eliminx-1]
+
+
+                    ## Consult 파싱 이전코드
+                    # cslt_q_text = ''
+                    # replace_tups = [(' - ', '-'), (' / ', '/'), ('s/p\n', 's/p '), ('\n.', '.'), ('\n', ' '),
+                    #                 ('  ', '\n')]
+                    #
+                    # try:cslt_q_text = cslt_q_text_raw.split('의뢰내용\n')[-1].cslt_q_text_raw.split('투여\n사유:\n')[-1].split('안녕하십니까.\n')[-1].split('안녕하십니까\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('의견\n')[1]
+                    # except:
+                    #     try:cslt_q_text = cslt_q_text_raw.split('의뢰내용\n')[-1].cslt_q_text_raw.split('투여\n사유:\n')[-1].split('안녕하십니까.\n')[-1].split('안녕하십니까\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('Opinions or Recommendations\n')[1]
+                    #     except:cslt_q_text = cslt_q_text_raw.split('의뢰내용\n')[-1].cslt_q_text_raw.split('투여\n사유:\n')[-1].split('안녕하십니까.\n')[-1].split('안녕하십니까\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('감사합니다.')[0].split('감사합니다')[0]
+
                     cslt_q_text = self.get_replaced_str_from_tups(target_str=cslt_q_text, tups=replace_tups).strip()
 
                     ## 회신텍스트 파싱
 
                     cslt_r_text_raw = r_cand_row['text']
-                    cslt_r_text = ''
+                    cslt_r_text = cslt_r_text_raw
                     replace_tups = [(' - ', '-'), (' / ', '/'), ('s/p\n', 's/p '), ('\n.', '.'), ('\n', ' '), ('  ', '\n')]
-                    try:cslt_r_text = cslt_r_text_raw.split('회신내용\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('의견\n')[1]
-                    except:
-                        try:cslt_r_text = cslt_r_text_raw.split('회신내용\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('Opinions or Recommendations\n')[1]
-                        except: cslt_r_text = cslt_r_text_raw.split('회신내용\n')[-1].split('작성자\n')[0].split('\n작성자')[0]
+                    elimlist_dict = {0: ['회신내용\n', '의견\n', 'Opinions or Recommendations\n'],
+                                     1: ['\n작성자', '작성자\n'],
+                                     }
+                    for eliminx, elimlist in elimlist_dict.items():
+                        for elimmargin in elimlist:
+                            cslt_r_text = cslt_r_text.split(elimmargin)[eliminx - 1]
+
+
+                    # try:cslt_r_text = cslt_r_text_raw.split('회신내용\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('의견\n')[1]
+                    # except:
+                    #     try:cslt_r_text = cslt_r_text_raw.split('회신내용\n')[-1].split('작성자\n')[0].split('\n작성자')[0].split('Opinions or Recommendations\n')[1]
+                    #     except: cslt_r_text = cslt_r_text_raw.split('회신내용\n')[-1].split('작성자\n')[0].split('\n작성자')[0]
                     cslt_r_text = self.get_replaced_str_from_tups(target_str=cslt_r_text, tups=replace_tups).strip()
 
                     additional_text = f"({csltrow['date']})\n{cslt_q_text} -> {cslt_r_text}\n"
+
                     parsed_str += additional_text
 
 
@@ -1042,6 +1074,8 @@ class snubh_cpt_tdm(tdm):
                 #     cslt_text = self.get_replaced_str_from_tups(target_str=cslt_text, tups=replace_tups)
                 #     additional_text = f"({csltrow['date']})\n{cslt_text}"
                 #     parsed_str+=additional_text
+
+
 
         else: parsed_str = 'empty'
         return parsed_str.strip()
