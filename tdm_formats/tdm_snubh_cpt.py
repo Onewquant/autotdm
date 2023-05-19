@@ -370,9 +370,9 @@ class snubh_cpt_tdm(tdm):
 
                 st.text_area(label='Draft', value='', height=594, key='first_draft')
 
-                st.button('Download', on_click=self.download_button_manager, args=('result',), key='download_result')
+                # st.button('Download', on_click=self.download_button_manager, args=('result',), key='download_result')
 
-                # st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
+                st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
 
                 st.divider()
 
@@ -410,10 +410,7 @@ class snubh_cpt_tdm(tdm):
         # self.pt_dict['tdm_date'] = self.tdm_date
         # self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
-        try:
-            self.download_button_manager(mode="input_records")
-        except:
-            pass
+        self.download_button_manager(mode="input_records")
 
         for k, v in st.session_state.items():
             if k in ('tdm_inst', 'tdm_date', 'drug', 'first_draft'):continue
