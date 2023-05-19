@@ -286,6 +286,34 @@ class snubh_cpt_tdm(tdm):
         self.individual_vars()
         # self.set_basic_info(tdm_date, hospital, division, tdm_user)
 
+    def download_button_manager(self, mode=''):
+        download_root_dir = f"{st.session_state['download_path']}"
+        try: check_dir(dir_path=download_root_dir)
+        except: download_root_dir = f"C:\\"
+
+        if mode=='result':
+            check_dir_continuous(['autotdm','result'], root_path=download_root_dir)
+            filename = f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')}.txt"
+            download_path = f"{download_root_dir}/autotdm/result/{filename}"
+            try:
+                with open(download_path, "w", encoding="utf-8-sig") as f:
+                    f.write(st.session_state['first_draft'])
+            except:
+                pass
+
+        elif mode=='input_records':
+            input_record_dirname =f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}({st.session_state['id']}){st.session_state['sex']}{st.session_state['age']}({datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')})"
+            check_dir_continuous(['autotdm', 'input_records', input_record_dirname], root_path=download_root_dir)
+            for key in ('history', 'lab', 'vs', 'order'):
+                filename = f"{key}_{st.session_state['name']}.txt"
+                download_path = f"{download_root_dir}/autotdm/input_records/{input_record_dirname}/{filename}"
+                try:
+                    with open(download_path, "w", encoding="utf-8-sig") as f:
+                        f.write(st.session_state[key])
+                except:
+                    pass
+
+
     def execution_flow(self):
 
         self.rcol1, self.rcol2 = st.columns([1,2], gap="medium")
@@ -344,7 +372,9 @@ class snubh_cpt_tdm(tdm):
 
                 st.text_area(label='Draft', value='', height=594, key='first_draft')
 
-                st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
+                st.button('Download', on_click=self.download_button_manager, args=('result',), key='download_result')
+
+                # st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
 
                 st.divider()
 
@@ -355,7 +385,7 @@ class snubh_cpt_tdm(tdm):
                 for k, v in self.ir_term_dict[self.short_drugname_dict[st.session_state['drug']]].items():
                     st.number_input(label=v, min_value=0.1, max_value=1000.0, step=1.0, key=k)
 
-                st.button('reflect parameters', on_click=self.reflecting_parameters, key='reflect_parameters')
+                st.button('Reflect Parameters', on_click=self.reflecting_parameters, key='reflect_parameters')
 
                 st.divider()
 
@@ -373,7 +403,7 @@ class snubh_cpt_tdm(tdm):
 
                     st.selectbox('Method', ['선택하세요', ] + [k.split('_')[1] for k in self.recom_tot_dict.keys() if k.split('_')[0]=='rec2'], key='ir_method')
 
-                    st.button('reflect ir', on_click=self.reflecting_ir_text, key='reflect_ir')
+                    st.button('Reflect IR', on_click=self.reflecting_ir_text, key='reflect_ir')
 
     def execution_of_generating_first_draft(self):
 
@@ -381,6 +411,11 @@ class snubh_cpt_tdm(tdm):
         # self.tdm_date = st.session_state['tdm_date'].strftime('%Y-%m-%d')
         # self.pt_dict['tdm_date'] = self.tdm_date
         # self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
+
+        try:
+            self.download_button_manager(mode="input_records")
+        except:
+            pass
 
         for k, v in st.session_state.items():
             if k in ('tdm_inst', 'tdm_date', 'drug', 'first_draft'):continue
