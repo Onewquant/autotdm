@@ -296,8 +296,12 @@ class snubh_cpt_tdm(tdm):
             filename = f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')}.txt"
             download_path = f"{download_root_dir}/autotdm/result/{filename}"
 
-            with open(download_path, "w", encoding="utf-8-sig") as f:
-                f.write(st.session_state['first_draft'])
+            # with open(download_path, "wb", encoding="utf-8-sig") as f:
+            #     f.write(st.session_state['first_draft'])
+
+            with open(download_path, "wb") as f:
+                f.write(st.session_state['first_draft'].encode('utf-8-sig'))
+
             # st.success("Saved result")
 
         elif mode=='input_records':
@@ -307,8 +311,11 @@ class snubh_cpt_tdm(tdm):
                 filename = f"{key}_{st.session_state['name']}.txt"
                 download_path = f"{download_root_dir}/autotdm/input_records/{input_record_dirname}/{filename}"
                 st.session_state['memo'] = download_path
-                with open(download_path, "w", encoding="utf-8-sig") as f:
-                    f.write(st.session_state[key])
+                # with open(download_path, "w", encoding="utf-8-sig") as f:
+                #     f.write(st.session_state[key])
+                with open(download_path, "wb") as f:
+                    f.write(st.session_state[key].encode('utf-8-sig'))
+
             # st.success("Saved input_records")
 
 
