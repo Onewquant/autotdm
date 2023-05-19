@@ -46,11 +46,12 @@ with st.sidebar:
     with scol2:
         st.button('Re-try', on_click=retry_button)
 
-    monitoring_str = ''
+    # monitoring_str = ''
+    monitoring_str = os.getcwd()
     # monitoring_str = '{'
-    # for k, v in st.session_state.items():
-    #     if k!='monitor': continue
-    #     monitoring_str += f"'{k}': '{v}',\n"
+    for k, v in st.session_state.items():
+        if k!='monitor': continue
+        monitoring_str += f"'{k}': '{v}',\n"
     # monitoring_str += '}'
     st.text_area('memo', monitoring_str)
 
@@ -67,13 +68,6 @@ else:
        st.write('TDM 로직을 개발중입니다.')
    else:
        pass
-
-
-
-
-
-
-# st.button('Reset', on_click=reset_button)
 
 
 
