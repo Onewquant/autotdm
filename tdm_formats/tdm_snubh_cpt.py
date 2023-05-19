@@ -372,7 +372,7 @@ class snubh_cpt_tdm(tdm):
 
                 # st.button('Download', on_click=self.download_button_manager, args=('result',), key='download_result')
 
-                st.download_button('Download', data=st.session_state['first_draft'], file_name=f"autotdm/results/{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
+                st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
 
                 st.divider()
 
