@@ -294,7 +294,7 @@ class snubh_cpt_tdm(tdm):
         if mode=='result':
             check_dir_continuous(['autotdm','result'], root_path=download_root_dir)
             filename = f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')}.txt"
-            download_path = f"{download_root_dir}/autotdm/result/{filename}"
+            download_path = f"{download_root_dir}autotdm/result/{filename}"
 
             with open(download_path, "w", encoding="utf-8-sig") as f:
                 f.write(st.session_state['first_draft'])
@@ -305,7 +305,7 @@ class snubh_cpt_tdm(tdm):
             check_dir_continuous(['autotdm', 'input_records', input_record_dirname], root_path=download_root_dir)
             for key in ('history', 'lab', 'vs', 'order'):
                 filename = f"{key}_{st.session_state['name']}.txt"
-                download_path = f"{download_root_dir}/autotdm/input_records/{input_record_dirname}/{filename}"
+                download_path = f"{download_root_dir}autotdm/input_records/{input_record_dirname}/{filename}"
                 st.session_state['memo'] = download_path
                 with open(download_path, "w", encoding="utf-8-sig") as f:
                     f.write(st.session_state[key])
