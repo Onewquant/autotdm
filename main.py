@@ -32,7 +32,7 @@ with st.sidebar:
     st.selectbox('병원', ('병원을 선택하세요','분당서울대학교병원', '서울대학교병원', ), key='hospital')
     st.selectbox('학과', ('학과를 선택하세요','임상약리학과', '진단검사의학과', '약제부',), key='tdm_division')
     st.text_input('사용자명', key='tdm_writer')
-    st.text_input('저장경로', value='C:\\', key='download_path')
+    st.text_input('저장경로', value='C:', key='download_path')
 
     st.divider()
     scol1, scol2 = st.columns(2, gap='small')
