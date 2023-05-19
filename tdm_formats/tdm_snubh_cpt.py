@@ -296,13 +296,9 @@ class snubh_cpt_tdm(tdm):
             filename = f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')}.txt"
             download_path = f"{download_root_dir}/autotdm/result/{filename}"
 
-            # with open(download_path, "wb", encoding="utf-8-sig") as f:
-            #     f.write(st.session_state['first_draft'])
+            with open(download_path, "w", encoding="utf-8-sig") as f:
+                f.write(st.session_state['first_draft'])
 
-            with open(download_path, "wb") as f:
-                f.write(st.session_state['first_draft'].encode('utf-8-sig'))
-
-            # st.success("Saved result")
 
         elif mode=='input_records':
             input_record_dirname =f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}({st.session_state['id']}){st.session_state['sex']}{st.session_state['age']}({datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')})"
@@ -311,12 +307,9 @@ class snubh_cpt_tdm(tdm):
                 filename = f"{key}_{st.session_state['name']}.txt"
                 download_path = f"{download_root_dir}/autotdm/input_records/{input_record_dirname}/{filename}"
                 st.session_state['memo'] = download_path
-                # with open(download_path, "w", encoding="utf-8-sig") as f:
-                #     f.write(st.session_state[key])
-                with open(download_path, "wb") as f:
-                    f.write(st.session_state[key].encode('utf-8-sig'))
+                with open(download_path, "w", encoding="utf-8-sig") as f:
+                    f.write(st.session_state[key])
 
-            # st.success("Saved input_records")
 
 
     def execution_flow(self):
@@ -379,7 +372,7 @@ class snubh_cpt_tdm(tdm):
 
                 # st.button('Download', on_click=self.download_button_manager, args=('result',), key='download_result')
 
-                st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
+                st.download_button('Download', data=st.session_state['first_draft'], file_name=f"autotdm/results/{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
 
                 st.divider()
 
@@ -417,7 +410,7 @@ class snubh_cpt_tdm(tdm):
         # self.pt_dict['tdm_date'] = self.tdm_date
         # self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
-        self.download_button_manager(mode="input_records")
+        # self.download_button_manager(mode="input_records")
 
         for k, v in st.session_state.items():
             if k in ('tdm_inst', 'tdm_date', 'drug', 'first_draft'):continue
