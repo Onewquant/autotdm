@@ -50,7 +50,7 @@ with st.sidebar:
     #     if k!='monitor': continue
     #     monitoring_str += f"'{k}': '{v}',\n"
     # monitoring_str += '}'
-    st.text_area('Memo', monitoring_str)
+    st.text_area('Memo', monitoring_str, key='memo')
 
 if (st.session_state['hospital']=='병원을 선택하세요') and (st.session_state['tdm_division']=='병원을 선택하세요'):
    pass
