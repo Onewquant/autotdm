@@ -300,7 +300,7 @@ class snubh_cpt_tdm(tdm):
             #
             # with open(download_path, "w", encoding="utf-8-sig") as f:
             #     f.write(st.session_state['first_draft'])
-            
+
             check_dir_continuous(['autotdm',], root_path=download_root_dir)
             filename = f"two_point_research.csv"
             file_path = f"{download_root_dir}/autotdm/{filename}"
@@ -313,7 +313,7 @@ class snubh_cpt_tdm(tdm):
             dailydose_val = round(st.session_state['adm_amount'] * (24 / st.session_state['adm_interval']), round_num)
             auc_val = round((st.session_state['adm_amount'] * (24 / st.session_state['adm_interval'])) / round(st.session_state['total_cl'], round_num), round_num)
 
-            result_dict = dict([(sscol, st.session_state[sscol]) for sscol in ('id', 'sex', 'age', 'tdm_date')])
+            result_dict = dict([(sscol, st.session_state[sscol]) for sscol in ('id', 'name', 'sex', 'age', 'tdm_date')])
             result_dict['Vd (L/kg)'] = vd_val
             result_dict['CL (ml/min/kg)'] = cl_val
             result_dict['total CL (L/hr)'] = total_cl_val
@@ -325,6 +325,7 @@ class snubh_cpt_tdm(tdm):
             with open(file_path, "a", encoding="utf-8-sig") as f:
                 result_df.to_csv(file_path, encoding='utf-8-sig', mode='a', index=False, header=(not os.path.exists(file_path)))
 
+            st.success(f"{st.session_state['id']} / {st.session_state['name']} / Result / Rec Successfully", icon=None)
 
         elif mode=='input_records':
             input_record_dirname =f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}({st.session_state['id']}){st.session_state['sex']}{st.session_state['age']}({datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')})"
