@@ -287,17 +287,43 @@ class snubh_cpt_tdm(tdm):
         # self.set_basic_info(tdm_date, hospital, division, tdm_user)
 
     def download_button_manager(self, mode=''):
-        download_root_dir = f"{st.session_state['download_path']}"
+
+        # download_root_dir = f"{st.session_state['download_path']}"
+        download_root_dir = f"G:"
         try: check_dir(dir_path=download_root_dir)
         except: download_root_dir = f"C:"
 
         if mode=='result':
-            check_dir_continuous(['autotdm','result'], root_path=download_root_dir)
-            filename = f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')}.txt"
-            download_path = f"{download_root_dir}/autotdm/result/{filename}"
+            # check_dir_continuous(['autotdm','result'], root_path=download_root_dir)
+            # filename = f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')}.txt"
+            # download_path = f"{download_root_dir}/autotdm/result/{filename}"
+            #
+            # with open(download_path, "w", encoding="utf-8-sig") as f:
+            #     f.write(st.session_state['first_draft'])
+            
+            check_dir_continuous(['autotdm',], root_path=download_root_dir)
+            filename = f"two_point_research.csv"
+            file_path = f"{download_root_dir}/autotdm/{filename}"
 
-            with open(download_path, "w", encoding="utf-8-sig") as f:
-                f.write(st.session_state['first_draft'])
+            round_num = 3
+            vd_val = float(round(st.session_state['vd_ss'] / st.session_state['weight'], round_num))
+            cl_val = float(round(st.session_state['total_cl'] * 1000 / 60 / st.session_state['weight'], 1))
+            total_cl_val = st.session_state['total_cl']
+            vdss_val = st.session_state['vd_ss']
+            dailydose_val = round(st.session_state['adm_amount'] * (24 / st.session_state['adm_interval']), round_num)
+            auc_val = round((st.session_state['adm_amount'] * (24 / st.session_state['adm_interval'])) / round(st.session_state['total_cl'], round_num), round_num)
+
+            result_dict = dict([(sscol, st.session_state[sscol]) for sscol in ('id', 'sex', 'age', 'tdm_date')])
+            result_dict['Vd (L/kg)'] = vd_val
+            result_dict['CL (ml/min/kg)'] = cl_val
+            result_dict['total CL (L/hr)'] = total_cl_val
+            result_dict['Vd steady state(L)'] = vdss_val
+            result_dict['Daily Dose (mg)'] = dailydose_val
+            result_dict['AUC (mg*h/L)'] = auc_val
+            result_df = pd.DataFrame([result_dict])
+
+            with open(file_path, "a", encoding="utf-8-sig") as f:
+                result_df.to_csv(file_path, encoding='utf-8-sig', mode='a', index=False, header=(not os.path.exists(file_path)))
 
 
         elif mode=='input_records':
@@ -370,7 +396,7 @@ class snubh_cpt_tdm(tdm):
 
                 st.text_area(label='Draft', value='', height=594, key='first_draft')
 
-                # st.button('Download', on_click=self.download_button_manager, args=('result',), key='download_result')
+                st.button('Rec for Research', on_click=self.download_button_manager, args=('result',), key='rec_for_research')
 
                 st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
 
@@ -2115,8 +2141,7 @@ class snubh_cpt_tdm(tdm):
                 calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nVc {round(self.ir_dict['vc'],1)}\nCL(ml/min/kg) {self.ir_dict['cl']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {float(round(self.ir_dict['half_life'], 1))}\nVd ss {self.ir_dict['vd_ss']}"
             else:
                 calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nCL(ml/min/kg) {self.ir_dict['cl']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {float(round(self.ir_dict['half_life'], 1))}\nVd ss {self.ir_dict['vd_ss']}"
-            auc_val = round(
-                (self.ir_dict['adm_amount'] * (24 / self.ir_dict['adm_interval'])) / round(self.ir_dict['total_cl'], round_num), round_num)
+            auc_val = round((self.ir_dict['adm_amount'] * (24 / self.ir_dict['adm_interval'])) / round(self.ir_dict['total_cl'], round_num), round_num)
             drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[drug]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num))} ㎍/mL\n3) 추정 AUC: {auc_val} mg*h/L\n\n"
 
             if (age > 18):
