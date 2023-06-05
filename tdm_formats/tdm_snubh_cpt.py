@@ -398,9 +398,9 @@ class snubh_cpt_tdm(tdm):
 
             with self.rcol2:
 
-                self.rcol3, self.rcol4 = st.columns([1, 2], gap="medium")
-
                 st.text_area(label='Draft', value='', height=594, key='first_draft')
+
+                self.rcol3, self.rcol4 = st.columns([1, 2], gap="medium")
 
                 with self.rcol3:
                     st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
