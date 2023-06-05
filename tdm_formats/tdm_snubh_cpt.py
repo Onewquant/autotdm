@@ -323,8 +323,7 @@ class snubh_cpt_tdm(tdm):
                 result_dict['AUC (mg*h/L)'] = auc_val
                 result_df = pd.DataFrame([result_dict])
 
-                with open(file_path, "a", encoding="utf-8-sig") as f:
-                    result_df.to_csv(file_path, encoding='utf-8-sig', mode='a', index=False, header=(not os.path.exists(file_path)))
+                result_df.to_csv(file_path, encoding='utf-8-sig', mode='a', index=False, header=(not os.path.exists(file_path)))
 
                 st.success(f"{st.session_state['id']} / {st.session_state['name']} / Result / Rec Successfully", icon=None)
             except:
