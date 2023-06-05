@@ -289,7 +289,7 @@ class snubh_cpt_tdm(tdm):
     def download_button_manager(self, mode=''):
 
         # download_root_dir = f"{st.session_state['download_path']}"
-        download_root_dir = f"G:"
+        download_root_dir = f"D:"
         try: check_dir(dir_path=download_root_dir)
         except: download_root_dir = f"C:"
 
@@ -301,31 +301,34 @@ class snubh_cpt_tdm(tdm):
             # with open(download_path, "w", encoding="utf-8-sig") as f:
             #     f.write(st.session_state['first_draft'])
 
-            check_dir_continuous(['autotdm',], root_path=download_root_dir)
-            filename = f"two_point_research.csv"
-            file_path = f"{download_root_dir}/autotdm/{filename}"
+            try:
+                check_dir_continuous(['autotdm',], root_path=download_root_dir)
+                filename = f"two_point_research.csv"
+                file_path = f"{download_root_dir}/autotdm/{filename}"
 
-            round_num = 3
-            vd_val = float(round(st.session_state['vd_ss'] / st.session_state['weight'], round_num))
-            cl_val = float(round(st.session_state['total_cl'] * 1000 / 60 / st.session_state['weight'], 1))
-            total_cl_val = st.session_state['total_cl']
-            vdss_val = st.session_state['vd_ss']
-            dailydose_val = round(st.session_state['adm_amount'] * (24 / st.session_state['adm_interval']), round_num)
-            auc_val = round((st.session_state['adm_amount'] * (24 / st.session_state['adm_interval'])) / round(st.session_state['total_cl'], round_num), round_num)
+                round_num = 3
+                vd_val = float(round(st.session_state['vd_ss'] / st.session_state['weight'], round_num))
+                cl_val = float(round(st.session_state['total_cl'] * 1000 / 60 / st.session_state['weight'], 1))
+                total_cl_val = st.session_state['total_cl']
+                vdss_val = st.session_state['vd_ss']
+                dailydose_val = round(st.session_state['adm_amount'] * (24 / st.session_state['adm_interval']), round_num)
+                auc_val = round((st.session_state['adm_amount'] * (24 / st.session_state['adm_interval'])) / round(st.session_state['total_cl'], round_num), round_num)
 
-            result_dict = dict([(sscol, st.session_state[sscol]) for sscol in ('id', 'name', 'sex', 'age', 'tdm_date')])
-            result_dict['Vd (L/kg)'] = vd_val
-            result_dict['CL (ml/min/kg)'] = cl_val
-            result_dict['total CL (L/hr)'] = total_cl_val
-            result_dict['Vd steady state(L)'] = vdss_val
-            result_dict['Daily Dose (mg)'] = dailydose_val
-            result_dict['AUC (mg*h/L)'] = auc_val
-            result_df = pd.DataFrame([result_dict])
+                result_dict = dict([(sscol, st.session_state[sscol]) for sscol in ('id', 'name', 'sex', 'age', 'tdm_date')])
+                result_dict['Vd (L/kg)'] = vd_val
+                result_dict['CL (ml/min/kg)'] = cl_val
+                result_dict['total CL (L/hr)'] = total_cl_val
+                result_dict['Vd steady state(L)'] = vdss_val
+                result_dict['Daily Dose (mg)'] = dailydose_val
+                result_dict['AUC (mg*h/L)'] = auc_val
+                result_df = pd.DataFrame([result_dict])
 
-            with open(file_path, "a", encoding="utf-8-sig") as f:
-                result_df.to_csv(file_path, encoding='utf-8-sig', mode='a', index=False, header=(not os.path.exists(file_path)))
+                with open(file_path, "a", encoding="utf-8-sig") as f:
+                    result_df.to_csv(file_path, encoding='utf-8-sig', mode='a', index=False, header=(not os.path.exists(file_path)))
 
-            st.success(f"{st.session_state['id']} / {st.session_state['name']} / Result / Rec Successfully", icon=None)
+                st.success(f"{st.session_state['id']} / {st.session_state['name']} / Result / Rec Successfully", icon=None)
+            except:
+                st.error(f"{st.session_state['id']} / {st.session_state['name']} / Result / Rec Failed", icon=None)
 
         elif mode=='input_records':
             input_record_dirname =f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}({st.session_state['id']}){st.session_state['sex']}{st.session_state['age']}({datetime.strftime(st.session_state['tdm_date'], '%Y%m%d')})"
@@ -395,11 +398,14 @@ class snubh_cpt_tdm(tdm):
 
             with self.rcol2:
 
+                self.rcol3, self.rcol4 = st.columns([1, 2], gap="medium")
+
                 st.text_area(label='Draft', value='', height=594, key='first_draft')
 
-                st.button('Rec for Research', on_click=self.download_button_manager, args=('result',), key='rec_for_research')
-
-                st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
+                with self.rcol3:
+                    st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
+                with self.rcol4:
+                    st.button('Rec for Research', on_click=self.download_button_manager, args=('result',), key='rec_for_research')
 
                 st.divider()
 
