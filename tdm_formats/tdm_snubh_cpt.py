@@ -413,7 +413,9 @@ class snubh_cpt_tdm(tdm):
                 self.define_ir_info()
 
                 for k, v in self.ir_term_dict[self.short_drugname_dict[st.session_state['drug']]].items():
-                    if (self.short_drugname_dict[st.session_state['drug']]=='VCM') and (k=='vc') and (st.session_state['age'] <= 18): continue
+                    if (self.short_drugname_dict[st.session_state['drug']]=='VCM') and (k=='vc') and (st.session_state['age'] <= 18):
+                        st.session_state[k] = '-'
+                        continue
                     else: st.number_input(label=v, min_value=0.1, max_value=1500.0, step=1.0, key=k)
 
                 st.button('Reflect Parameters', on_click=self.reflecting_parameters, key='reflect_parameters')
