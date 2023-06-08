@@ -353,7 +353,7 @@ class snubh_cpt_tdm(tdm):
                     st.radio(v,options=('남','여'), horizontal=True, key=k)
                     continue
                 elif k=='age':
-                    st.number_input(label=v, min_value=1 ,max_value=120, step=1, key=k)
+                    st.number_input(label=v, min_value=0 ,max_value=120, step=1, key=k)
                     if st.session_state['age'] <= 18:
                         st.session_state['pedi'] = True
                         self.pt_dict['pedi'] = True
@@ -413,7 +413,8 @@ class snubh_cpt_tdm(tdm):
                 self.define_ir_info()
 
                 for k, v in self.ir_term_dict[self.short_drugname_dict[st.session_state['drug']]].items():
-                    st.number_input(label=v, min_value=0.1, max_value=1000.0, step=1.0, key=k)
+                    if (self.short_drugname_dict[st.session_state['drug']]=='VCM') and (k=='vc') and (st.session_state['age'] <= 18): continue
+                    else: st.number_input(label=v, min_value=0.1, max_value=1500.0, step=1.0, key=k)
 
                 st.button('Reflect Parameters', on_click=self.reflecting_parameters, key='reflect_parameters')
 
