@@ -308,13 +308,13 @@ class snubh_cpt_tdm(tdm):
 
                 round_num = 3
                 vd_val = float(round(st.session_state['vd_ss'] / st.session_state['weight'], round_num))
-                cl_val = float(round(st.session_state['total_cl'] * 1000 / 60 / st.session_state['weight'], 1))
+                cl_val = float(round(st.session_state['total_cl'] * 1000 / 60 / st.session_state['weight'], round_num))
                 total_cl_val = st.session_state['total_cl']
                 vdss_val = st.session_state['vd_ss']
                 dailydose_val = round(st.session_state['adm_amount'] * (24 / st.session_state['adm_interval']), round_num)
                 auc_val = round((st.session_state['adm_amount'] * (24 / st.session_state['adm_interval'])) / round(st.session_state['total_cl'], round_num), round_num)
 
-                result_dict = dict([(sscol, st.session_state[sscol]) for sscol in ('id', 'name', 'sex', 'age', 'tdm_date')])
+                result_dict = dict([(sscol, st.session_state[sscol]) for sscol in ('id', 'name', 'sex', 'age', 'height', 'weight', 'tdm_date')])
                 result_dict['Vd (L/kg)'] = vd_val
                 result_dict['CL (ml/min/kg)'] = cl_val
                 result_dict['total CL (L/hr)'] = total_cl_val
@@ -1949,7 +1949,7 @@ class snubh_cpt_tdm(tdm):
 
         self.ir_recomm_dict = {'AMK': {'Subtherapeutic': {'rec1_SS': '1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
                                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않았으나 현 용법 유지시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
-                                                          'rec2_공통': '2. 적극적인 감염 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 변경 용법의 적절성을 재확인하시기 바랍니다.',
+                                                          'rec2_공통': f'2. 적극적인 감염 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 신기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 전 30분 및 투약 후 30분에 각각 1회씩 채혈을 통해 TDM f/u하시어 변경 용법의 적절성을 재확인하시기 바랍니다.',
                                                           },
                                        'Lowermargin': {
                                            'rec1_SS': '1. Lower margin of therapeutic Level 입니다. 감염 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
@@ -2301,6 +2301,11 @@ class snubh_cpt_tdm(tdm):
             prefix_str = '* Digoxin의 혈중 약물농도만으로는 약효 및 독성 발현 산출에 한계가 있으므로, 임상증상을 뒷받침하는 참고자료로 활용하시기 바랍니다.\n\n'
 
         self.ir_text = f"= Interpretation : \n{iconc_str}\n\n= Recommendation : \n{prefix_str}{rec1_str}{rec2_str}"
+        if '농도는 아래와 같습니다.' in self.ir_text:
+            if (drug == 'AMK') or (drug == 'GTM'): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL"
+            elif drug == 'VCM': self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL\n3) 변경시 예상 AUC :  mg*h/L"
+            elif (drug == 'DGX') or (drug == 'VPA'): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ng/mL\n2) 변경시 예상 Trough :  ng/mL"
+            else: pass
         self.ir_text = self.ir_text.replace('\n\n', '\n \n')
         return self.ir_text
 
@@ -2378,6 +2383,11 @@ class snubh_cpt_tdm(tdm):
                 prefix_str = '* Digoxin의 혈중 약물농도만으로는 약효 및 독성 발현 산출에 한계가 있으므로, 임상증상을 뒷받침하는 참고자료로 활용하시기 바랍니다.\n\n'
 
             self.ir_text = f"= Interpretation : \n{iconc_str}\n\n= Recommendation : \n{prefix_str}{rec1_str}{rec2_str}"
+            if '농도는 아래와 같습니다.' in self.ir_text:
+                if (drug=='AMK') or (drug=='GTM'): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL"
+                elif drug=='VCM': self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL\n3) 변경시 예상 AUC :  mg*h/L"
+                elif (drug=='DGX') or (drug=='VPA') : self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ng/mL\n2) 변경시 예상 Trough :  ng/mL"
+                else: pass
             self.ir_text = self.ir_text.replace('\n\n','\n \n')
             # print(self.ir_text)
 
