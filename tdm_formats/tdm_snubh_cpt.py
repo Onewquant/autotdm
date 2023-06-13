@@ -2301,11 +2301,13 @@ class snubh_cpt_tdm(tdm):
             prefix_str = '* Digoxin의 혈중 약물농도만으로는 약효 및 독성 발현 산출에 한계가 있으므로, 임상증상을 뒷받침하는 참고자료로 활용하시기 바랍니다.\n\n'
 
         self.ir_text = f"= Interpretation : \n{iconc_str}\n\n= Recommendation : \n{prefix_str}{rec1_str}{rec2_str}"
+        # st.session_state['memo'] = str('농도는 아래와 같습니다.' in self.ir_text)
         if '농도는 아래와 같습니다.' in self.ir_text:
             if (drug == 'AMK') or (drug == 'GTM'): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL"
             elif drug == 'VCM': self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL\n3) 변경시 예상 AUC :  mg*h/L"
             elif (drug == 'DGX') or (drug == 'VPA'): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ng/mL\n2) 변경시 예상 Trough :  ng/mL"
             else: pass
+
         self.ir_text = self.ir_text.replace('\n\n', '\n \n')
         return self.ir_text
 
