@@ -228,7 +228,7 @@ def parse_daily_notnull_labdf_into_addtext(lab_date, lab_key, not_null_df):
     return addtext
 
 def get_all_conomitant_drugs(order_str):
-    raw_order_cols = ['처방지시', '발행처', '발행의', '수납', '약국/검사', '주사시행처', 'Acting', '변경의']
+    raw_order_cols = ['비고','처방지시', '발행처', '발행의', '수납', '약국/검사', '주사시행처', 'Acting', '변경의']
     result_order_cols = ['date', 'time', '처방지시', '발행처', '발행의', '수납', '약국/검사', '주사시행처', 'Acting', '변경의', 'D/C',
                               '보류', '반납']
     order_df = pd.DataFrame(columns=result_order_cols)
@@ -568,7 +568,7 @@ class snubh_cpt_tdm(tdm):
         self.pt_hx_raw = ''
         self.pt_hx_df = pd.DataFrame(columns=['type', 'department', 'date', 'text'])
 
-        self.raw_order_cols = ['처방지시', '발행처', '발행의', '수납', '약국/검사', '주사시행처', 'Acting', '변경의']
+        self.raw_order_cols = ['비고','처방지시', '발행처', '발행의', '수납', '약국/검사', '주사시행처', 'Acting', '변경의']
         self.result_order_cols = ['date', 'time', '처방지시', '발행처', '발행의', '수납', '약국/검사', '주사시행처', 'Acting', '변경의', 'D/C',
                                   '보류', '반납']
         self.order_df = pd.DataFrame(columns=self.result_order_cols)
@@ -926,7 +926,7 @@ class snubh_cpt_tdm(tdm):
         elif (len(parsed_order_list)==1):
             if len(list(parsed_order_list[0].keys()))==1:
                 if (list(parsed_order_list[0].keys())[-1])=='처방지시':
-                    self.order_df = pd.DataFrame(columns=['처방지시', '발행처', '발행의', '수납', '약국/검사', '주사시행처', 'Acting', '변경의'])
+                    self.order_df = pd.DataFrame(columns=self.raw_order_cols)
                     return self.order_df
         else: pass
         # self.result_order_cols
