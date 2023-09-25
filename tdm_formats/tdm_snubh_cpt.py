@@ -313,6 +313,7 @@ class snubh_cpt_tdm(tdm):
                 vdss_val = st.session_state['vd_ss']
                 dailydose_val = round(st.session_state['adm_amount'] * (24 / st.session_state['adm_interval']), round_num)
                 auc_val = round((st.session_state['adm_amount'] * (24 / st.session_state['adm_interval'])) / round(st.session_state['total_cl'], round_num), round_num)
+                trough_conc = st.session_state['est_trough']
 
                 result_dict = dict([(sscol, st.session_state[sscol]) for sscol in ('id', 'name', 'sex', 'age', 'height', 'weight', 'tdm_date')])
                 result_dict['Vd (L/kg)'] = vd_val
@@ -321,6 +322,7 @@ class snubh_cpt_tdm(tdm):
                 result_dict['Vd steady state(L)'] = vdss_val
                 result_dict['Daily Dose (mg)'] = dailydose_val
                 result_dict['AUC (mg*h/L)'] = auc_val
+                result_dict['trough concentration'] = trough_conc
                 result_df = pd.DataFrame([result_dict])
 
                 result_df.to_csv(file_path, encoding='utf-8-sig', mode='a', index=False, header=(not os.path.exists(file_path)))
