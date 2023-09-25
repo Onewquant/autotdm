@@ -316,6 +316,8 @@ class snubh_cpt_tdm(tdm):
                 trough_conc = st.session_state['est_trough']
 
                 result_dict = dict([(sscol, st.session_state[sscol]) for sscol in ('id', 'name', 'sex', 'age', 'height', 'weight', 'tdm_date')])
+                result_dict['Dose per Adm (mg)'] = st.session_state['adm_amount']
+                result_dict['Dosing Interval (h)'] = st.session_state['adm_interval']
                 result_dict['Vd (L/kg)'] = vd_val
                 result_dict['CL (ml/min/kg)'] = cl_val
                 result_dict['total CL (L/hr)'] = total_cl_val
