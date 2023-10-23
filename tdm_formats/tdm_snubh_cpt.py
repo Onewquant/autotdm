@@ -443,51 +443,53 @@ class snubh_cpt_tdm(tdm):
                     st.button('Reflect IR', on_click=self.reflecting_ir_text, key='reflect_ir')
 
     def execution_of_generating_first_draft(self):
-
         # self.tdm_writer = st.session_state['tdm_writer']
         # self.tdm_date = st.session_state['tdm_date'].strftime('%Y-%m-%d')
         # self.pt_dict['tdm_date'] = self.tdm_date
         # self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
         # self.download_button_manager(mode="input_records")
+        try:
 
-        for k, v in st.session_state.items():
-            if k in ('tdm_inst', 'tdm_date', 'drug', 'first_draft'):continue
-            elif k=='sex':
-                self.pt_dict[k]= 'M' if v=='남' else 'F'
-            elif k=='age':
-                self.pt_dict[k] = v
-            elif k=='history':
-                self.pt_hx_raw = self.get_reduced_sentence(v)
-                if self.pt_hx_raw != '':
-                    self.pt_hx_df = self.get_pt_hx_df(hx_str=self.pt_hx_raw)
-                    # st.session_state['monitor'] = self.pt_hx_df
-                    # st.session_state['monitor'] = self.pt_dict['pedi']
-                    self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
-                    # st.session_state['monitor'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
-                    self.pt_dict['consult'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
+            for k, v in st.session_state.items():
+                if k in ('tdm_inst', 'tdm_date', 'drug', 'first_draft'):continue
+                elif k=='sex':
+                    self.pt_dict[k]= 'M' if v=='남' else 'F'
+                elif k=='age':
+                    self.pt_dict[k] = v
+                elif k=='history':
+                    self.pt_hx_raw = self.get_reduced_sentence(v)
+                    if self.pt_hx_raw != '':
+                        self.pt_hx_df = self.get_pt_hx_df(hx_str=self.pt_hx_raw)
+                        # st.session_state['monitor'] = self.pt_hx_df
+                        # st.session_state['monitor'] = self.pt_dict['pedi']
+                        self.pt_dict[k] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type=k)
+                        # st.session_state['monitor'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
+                        self.pt_dict['consult'] = self.parse_patient_history(hx_df=self.pt_hx_df, cont_type='consult')
+                    else:
+                        self.pt_dict[k] = ''
+                        self.pt_dict['consult'] = ''
+                elif k == 'hemodialysis':
+                    self.pt_dict[k] = self.get_reduced_sentence(v)
+                elif k == 'electroencephalography':
+                    self.pt_dict[k] = self.get_parsed_eeg_result(eeg_result=v)
+                elif k == 'echocardiography':
+                    self.pt_dict[k] = self.get_parsed_echocardiography_result(echo_result=v)
+                elif k=='ecg':
+                    self.pt_dict[k] = self.get_parsed_ecg_result(ecg_result=v)
+                elif k=='vs':
+                    self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
+                elif k=='lab':
+                    self.pt_dict[k] = self.get_parsed_lab_df(value=v)
+                elif k=='order':
+                    self.pt_dict[k] = self.parse_order_record(order_str=v)
                 else:
-                    self.pt_dict[k] = ''
-                    self.pt_dict['consult'] = ''
-            elif k == 'hemodialysis':
-                self.pt_dict[k] = self.get_reduced_sentence(v)
-            elif k == 'electroencephalography':
-                self.pt_dict[k] = self.get_parsed_eeg_result(eeg_result=v)
-            elif k == 'echocardiography':
-                self.pt_dict[k] = self.get_parsed_echocardiography_result(echo_result=v)
-            elif k=='ecg':
-                self.pt_dict[k] = self.get_parsed_ecg_result(ecg_result=v)
-            elif k=='vs':
-                self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
-            elif k=='lab':
-                self.pt_dict[k] = self.get_parsed_lab_df(value=v)
-            elif k=='order':
-                self.pt_dict[k] = self.parse_order_record(order_str=v)
-            else:
-                self.pt_dict[k] = v
+                    self.pt_dict[k] = v
 
-        self.generate_tdm_reply_text()
-        st.session_state['first_draft'] = self.file_content
+            self.generate_tdm_reply_text()
+            st.session_state['first_draft'] = self.file_content
+        except:
+            st.error(f"{st.session_state['id']} / {st.session_state['name']} / 1st Draft / Generation Failed", icon=None)
         # st.text_area('',self.file_content,)
 
     def retry_execution(self):
@@ -936,20 +938,27 @@ class snubh_cpt_tdm(tdm):
         # self.result_order_cols
         self.order_df = pd.DataFrame(parsed_order_list)
 
-        self.order_df['date'] = ''
-        self.order_df['time'] = ''
-        self.order_df['D/C'] = ''
-        self.order_df['보류'] = ''
-        self.order_df['반납'] = ''
+        for c in ('date', 'time', 'D/C', '보류', '반납'):
+            self.order_df[c] = ''
+        # row = self.order_df.iloc[5]
         for inx, row in self.order_df.iterrows():
-            self.order_df.at[inx, '처방지시'] = row['처방지시'].strip()
-            self.order_df.at[inx, 'date'] = row['발행의'].split(' ')[-2]
-            self.order_df.at[inx, 'time'] = row['발행의'].split(' ')[-1]
-            for order_state in ('D/C', '보류', '반납'):
-                self.order_df.at[inx, order_state] = order_state in row['처방지시']
+
+            if (type(row['발행의']) != str) or (type(row['발행처']) != str): continue
+            else:
+                if len(row['발행의'].split(' ')) > 2:
+                    self.order_df.at[inx, '처방지시'] = row['처방지시'].strip()
+                    self.order_df.at[inx, 'date'] = row['발행의'].split(' ')[-2]
+                    self.order_df.at[inx, 'time'] = row['발행의'].split(' ')[-1]
+                elif len(row['발행처'].split(' ')) > 2:
+                    self.order_df.at[inx, '처방지시'] = row['비고'].strip()
+                    self.order_df.at[inx, 'date'] = row['발행처'].split(' ')[-2]
+                    self.order_df.at[inx, 'time'] = row['발행처'].split(' ')[-1]
+                else:
+                    continue
+                for order_state in ('D/C', '보류', '반납'):
+                    self.order_df.at[inx, order_state] = order_state in self.order_df.at[inx, '처방지시']
 
         self.order_df = self.order_df[self.result_order_cols]
-        # self.order_df[self.order_df['반납']==True]
 
         return self.order_df
 
@@ -1352,7 +1361,7 @@ class snubh_cpt_tdm(tdm):
         return dodf
 
     def get_drug_administration_hx_full_text(self, drug):
-
+        # drug = 'VCM'
         drug_full_name = self.drug_fullname_dict[drug][0]
         drug_full_name = drug_full_name[0].upper() + drug_full_name[1:].lower()
         # adm_df['투여시간list']
