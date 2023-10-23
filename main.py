@@ -1,7 +1,7 @@
 from tdm_import import *
 
 # """
-# ## 오프라인 테스트 실행
+## 오프라인 테스트 실행
 #
 # from tdm_import import *
 #

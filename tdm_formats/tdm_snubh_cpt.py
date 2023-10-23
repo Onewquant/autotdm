@@ -57,12 +57,12 @@ def parse_daily_notnull_labdf_into_addtext(lab_date, lab_key, not_null_df):
         all_valid_df = not_null_df[~not_null_df.isnull().any(axis=1)]
         if len(all_valid_df)>0:
             nnrow = all_valid_df.iloc[0]
-            d_wbc = nnrow['WBC'] * 1000
+            d_wbc = round(nnrow['WBC'] * 1000,5)
             d_segneut = nnrow['Seg.neut.']
             d_anc = nnrow['ANC']
         else:
             for nninx, nnrow in not_null_df.iterrows():
-                if np.isnan(d_wbc): d_wbc = nnrow['WBC'] * 1000
+                if np.isnan(d_wbc): d_wbc = round(nnrow['WBC'] * 1000)
                 if np.isnan(d_segneut): d_segneut = nnrow['Seg.neut.']
                 if np.isnan(d_anc): d_anc = nnrow['ANC']
 
@@ -1205,6 +1205,8 @@ class snubh_cpt_tdm(tdm):
         # for ud in uniq_date: break
 
         # self.ldf.columns
+        # for ud in uniq_date: break
+        # ud = '2023-10-20'
         for ud in uniq_date:
             ldf_frag = self.ldf[self.ldf['date'] == ud].copy()
             # for lab_key, lab_list in self.lablist_dict.items(): break
