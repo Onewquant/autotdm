@@ -412,7 +412,7 @@ class snubh_cpt_tdm(tdm):
                     st.button('Rec for Research', on_click=self.download_button_manager, args=('result',), key='rec_for_research')
                 with self.rcol5:
                     # st.session_state['drug_use_df'] = pd.DataFrame(columns=['date', 'drug', 'value'])
-                    st.download_button(label='DDI Eval', data=convert_df(st.session_state['ps_viewer']), file_name=f"(DDI_EVAL) {self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.csv", mime="text/csv", on_click=self.patient_state_viewer_analysis, args=('/Y',) , key='ddi_eval_download')
+                    st.download_button(label='DDI Evaluation', data=convert_df(st.session_state['ps_viewer']), file_name=f"(DDI_EVAL) {self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.csv", mime="text/csv", on_click=self.patient_state_viewer_analysis, args=('/Y',) , key='ddi_eval_download')
 
                 st.divider()
 
@@ -1233,6 +1233,12 @@ class snubh_cpt_tdm(tdm):
                                           'Ammonia': ['Ammo', ],
                                           'Alb': ['Albumin']
                                           },
+                                  'CBZ': {'PLT/PT/aPTT': ['Platelet', 'PT %', 'aPTT'],
+                                          'BUN/Cr': ['BUN', 'Cr (S)'],
+                                          'T.bil/AST/ALT': ['T.B', 'AST', 'ALT'],
+                                          'Ammonia': ['Ammo', ],
+                                          'Alb': ['Albumin']
+                                          },
 
                                   }
 
@@ -1592,7 +1598,7 @@ class snubh_cpt_tdm(tdm):
                               'AMK': ['Furosemide', 'Piperacillin/Tazobactam', 'Penem', 'avir', 'ovir', 'cillin', 'mycin', 'ceft', 'tacrolimus', 'cefepime', 'xacin', 'rifampicin', 'rifampin','sulfamethoxazol', 'trimethoprim', 'cilastatin', 'Metronidazole','Refampin', 'colistin', 'fungin', 'gentamicin', 'mycin', 'fluconazole', 'amikacin', 'cycloserine', 'ethambutol', 'ampotericin B', 'conazole'],
                               'GTM': ['Furosemide', 'Piperacillin/Tazobactam', 'Penem', 'avir', 'ovir', 'cillin', 'mycin', 'ceft', 'tacrolimus', 'cefepime', 'xacin', 'rifampicin', 'rifampin', 'sulfamethoxazol', 'trimethoprim', 'cilastatin', 'Metronidazole', 'Refampin', 'colistin', 'fungin', 'gentamicin', 'mycin', 'fluconazole', 'amikacin', 'cycloserine', 'ethambutol', 'ampotericin B', 'conazole'],
                               'DGX': ['spironolactone', 'diltiazem','prolol', 'dipine', 'cyclosporine', 'norepinephrine', 'carbedilol', 'esmolol', 'clonazepam','captopril', 'Triamterene', 'hydrochlorothiazide', 'Amiodarone', 'dronedarone', 'itraconazole', 'macrolide', 'clarythromycin, erythromycin, tetracyclin', 'verapamil', 'rifampin', 'Sucralfate', 'Alprazolam', 'calcium'],
-                              'VPA': ['levetiracetam'],
+                              'VPA': ['levetiracetam', 'penem', ],
                               }
         cm_except_list = [d.lower() for d in self.drug_fullname_dict[drug]]
         cm_cand_list = self.conc_mdx_dict[drug]
