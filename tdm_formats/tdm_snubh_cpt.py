@@ -279,6 +279,9 @@ def get_all_conomitant_drugs(order_str):
 
     return result_df
 
+@st.cache_data(ttl=60)
+def convert_df(df):
+    return df.to_csv(index=False, encoding='utf-8-sig')
 
 class snubh_cpt_tdm(tdm):
     def __init__(self):
@@ -403,12 +406,15 @@ class snubh_cpt_tdm(tdm):
 
                 st.text_area(label='Draft', value='', height=594, key='first_draft')
 
-                self.rcol3, self.rcol4 = st.columns([1, 2], gap="medium")
+                self.rcol3, self.rcol4, self.rcol5 = st.columns([1, 2, 3], gap="medium")
 
                 with self.rcol3:
-                    st.download_button('Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
+                    st.download_button(label='Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
                 with self.rcol4:
                     st.button('Rec for Research', on_click=self.download_button_manager, args=('result',), key='rec_for_research')
+                with self.rcol5:
+                    # st.session_state['drug_use_df'] = pd.DataFrame(columns=['date', 'drug', 'value'])
+                    st.download_button(label='DDI Evaluation', data=convert_df(st.session_state['ps_viewer']), file_name=f"(DDI_EVAL) {self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.csv", mime="text/csv", on_click=self.patient_state_viewer_analysis, args=('/Y',) , key='ddi_eval_download')
 
                 st.divider()
 
@@ -449,7 +455,7 @@ class snubh_cpt_tdm(tdm):
         # self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
         # self.download_button_manager(mode="input_records")
-        try:
+        # try:
 
             for k, v in st.session_state.items():
                 if k in ('tdm_inst', 'tdm_date', 'drug', 'first_draft'):continue
@@ -488,8 +494,25 @@ class snubh_cpt_tdm(tdm):
 
             self.generate_tdm_reply_text()
             st.session_state['first_draft'] = self.file_content
-        except:
-            st.error(f"{st.session_state['id']} / {st.session_state['name']} / 1st Draft / Generation Failed", icon=None)
+
+            # self.order_data_prep_for_ddi_analysis()
+
+            # crst_str = 'drugs\t'
+            # for c in list(st.session_state['drug_use_df'].columns):
+            #     crst_str+= f'{c}\t'
+            # crst_str+='\n'
+            # for inx, row in st.session_state['drug_use_df'].iterrows():
+            #     crst_str += f'{inx}\t'
+            #     for rc_inx, rc_val in enumerate(row):
+            #         crst_str += f'{rc_val}\t'
+            #     crst_str += '\n'
+            #
+            # st.session_state['first_draft'] = crst_str
+            # st.session_state['first_draft'] = str(st.session_state['drug_use_df'])
+
+
+        # except:
+        #     st.error(f"{st.session_state['id']} / {st.session_state['name']} / 1st Draft / Generation Failed", icon=None)
         # st.text_area('',self.file_content,)
 
     def retry_execution(self):
@@ -911,6 +934,21 @@ class snubh_cpt_tdm(tdm):
             target_str=target_str.replace(tup[0], tup[1])
         return target_str
 
+    def patient_state_viewer_analysis(self, included_prx_sig='/Y'):
+        self.ps_viewer_df = list()
+        # st.session_state['memo'] = str(self.order_df['Acting'].iloc[16])
+        for inx, row in self.order_df.iterrows():
+            if (included_prx_sig in row['Acting']) and len(re.findall(r'\([A-Za-z]*\)',row['처방지시']))>0:
+                drug_str = re.findall(r'\([A-Za-z]*\)',row['처방지시'])[0][1:-1]
+                if drug_str in ('ASAP',):
+                    continue
+                else:
+                    self.ps_viewer_df.append({'date':row['date'], 'drug':drug_str, 'value':1})
+        self.ps_viewer_df = pd.DataFrame(self.ps_viewer_df)
+        # st.session_state['memo'] = str(self.drug_orders_df)
+        if len(self.ps_viewer_df)>0:
+            self.ps_viewer_df = self.ps_viewer_df.pivot_table(index=['drug'], columns=['date'], values=['value'], aggfunc=np.nanmax)
+        st.session_state['ps_viewer'] = self.ps_viewer_df.copy()
 
     def parse_order_record(self, order_str):
         # order_str = input().strip()
@@ -919,8 +957,9 @@ class snubh_cpt_tdm(tdm):
         # ''.split('\n')
         if order_str=='': return self.order_df
         raw_order_str_list = order_str.split('\n')
-
+        # order_str[:200]
         # for inx, row in self.order_df.iterrows(): break
+        # st.session_state['memo'] = f"{raw_order_str_list[0]}//{raw_order_str_list[1]}"
 
         parsed_order_list = list()
         for row in raw_order_str_list:
@@ -959,7 +998,7 @@ class snubh_cpt_tdm(tdm):
                     self.order_df.at[inx, order_state] = order_state in self.order_df.at[inx, '처방지시']
 
         self.order_df = self.order_df[self.result_order_cols]
-
+        # self.order_df.columns
         return self.order_df
 
     def parse_patient_history(self, hx_df, cont_type=''):
@@ -2407,9 +2446,9 @@ class snubh_cpt_tdm(tdm):
 
             self.ir_text = f"= Interpretation : \n{iconc_str}\n\n= Recommendation : \n{prefix_str}{rec1_str}{rec2_str}"
             if '농도는 아래와 같습니다.' in self.ir_text:
-                if (drug=='AMK') or (drug=='GTM'): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL"
+                if (drug in ('AMK', 'GTM', 'VPA')): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL"
                 elif drug=='VCM': self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL\n3) 변경시 예상 AUC :  mg*h/L"
-                elif (drug=='DGX') or (drug=='VPA') : self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ng/mL\n2) 변경시 예상 Trough :  ng/mL"
+                elif (drug=='DGX') : self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ng/mL\n2) 변경시 예상 Trough :  ng/mL"
                 else: pass
             self.ir_text = self.ir_text.replace('\n\n','\n \n')
             # print(self.ir_text)

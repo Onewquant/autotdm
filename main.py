@@ -1,5 +1,17 @@
 from tdm_import import *
 
+# 오프라인 테스트 실행
+
+from tdm_import import *
+
+# self = snubh_cpt_tdm()
+# self.offline_execution_main()
+# self.generate_tdm_reply_text()
+# self.save_result_offline()
+# self.open_result_txt()
+# calc_text = self.offline_get_interpretation_and_recommendation_text(drug=self.pt_dict['drug'])
+# ir_text = self.offline_ir_text_generator(mode='manual', drug=self.pt_dict['drug'])
+
 # """
 ## 오프라인 테스트 실행
 #
@@ -19,6 +31,8 @@ def reset_button():
     st.session_state.hospital = '병원을 선택하세요'
     st.session_state.tdm_division = '학과를 선택하세요'
     st.session_state.tdm_writer = ''
+    st.session_state.ps_viewer = pd.DataFrame(columns=['date', 'drug', 'value'])
+
 
 def retry_button():
     st.session_state.tdm_inst.retry_execution()
@@ -32,6 +46,7 @@ with st.sidebar:
     st.selectbox('병원', ('병원을 선택하세요','분당서울대학교병원', '서울대학교병원', ), key='hospital')
     st.selectbox('학과', ('학과를 선택하세요','임상약리학과', '진단검사의학과', '약제부',), key='tdm_division')
     st.text_input('사용자명', key='tdm_writer')
+    st.session_state['ps_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
     # st.text_input('저장경로', value='C:', key='download_path')
 
     st.divider()

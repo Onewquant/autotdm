@@ -10,6 +10,7 @@ class tdm():
         self.hospital = ''
         self.division = ''
         self.tdm_writer = ''
+        self.psviewer = None
 
     def individual_vars(self):
         pass
