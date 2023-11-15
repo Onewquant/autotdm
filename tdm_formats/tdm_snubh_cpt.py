@@ -346,8 +346,6 @@ class snubh_cpt_tdm(tdm):
                 with open(download_path, "w", encoding="utf-8-sig") as f:
                     f.write(st.session_state[key])
 
-
-
     def execution_flow(self):
 
         self.rcol1, self.rcol2 = st.columns([1,2], gap="medium")
