@@ -412,7 +412,7 @@ class snubh_cpt_tdm(tdm):
                     st.button('Rec for Research', on_click=self.download_button_manager, args=('result',), key='rec_for_research')
                 with self.rcol5:
                     # st.session_state['drug_use_df'] = pd.DataFrame(columns=['date', 'drug', 'value'])
-                    st.download_button(label='DDI Evaluation', data=convert_df(st.session_state['ps_viewer']), file_name=f"(DDI_EVAL) {self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.csv", mime="text/csv", on_click=self.patient_state_viewer_analysis, args=('/Y',) , key='ddi_eval_download')
+                    st.download_button(label='DDI Eval', data=convert_df(st.session_state['ps_viewer']), file_name=f"(DDI_EVAL) {self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.csv", mime="text/csv", on_click=self.patient_state_viewer_analysis, args=('/Y',) , key='ddi_eval_download')
 
                 st.divider()
 
@@ -453,8 +453,7 @@ class snubh_cpt_tdm(tdm):
         # self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
         # self.download_button_manager(mode="input_records")
-        # try:
-
+        try:
             for k, v in st.session_state.items():
                 if k in ('tdm_inst', 'tdm_date', 'drug', 'first_draft'):continue
                 elif k=='sex':
@@ -509,9 +508,9 @@ class snubh_cpt_tdm(tdm):
             # st.session_state['first_draft'] = str(st.session_state['drug_use_df'])
 
 
-        # except:
-        #     st.error(f"{st.session_state['id']} / {st.session_state['name']} / 1st Draft / Generation Failed", icon=None)
-        # st.text_area('',self.file_content,)
+        except:
+            st.error(f"{st.session_state['id']} / {st.session_state['name']} / 1st Draft / Generation Failed", icon=None)
+
 
     def retry_execution(self):
 
@@ -578,9 +577,15 @@ class snubh_cpt_tdm(tdm):
                                                 'lab': 'Lab 검사결과',
                                                 'order': '전체오더'
                                                 },
+                                        'CBZ': {'history': '환자 History',
+                                                'electroencephalography': '뇌전도검사',
+                                                'consult': '타과컨설트',
+                                                'lab': 'Lab 검사결과',
+                                                'order': '전체오더'
+                                                },
                                         }
 
-        self.short_drugname_dict = {'약물을 입력하세요':'DRUG was not chosen', 'Vancomycin': 'VCM', 'Amikacin': 'AMK', 'Gentamicin': 'GTM', 'Digoxin': 'DGX', 'Valproic Acid': 'VPA', 'Phenytoin': 'PHT'}
+        self.short_drugname_dict = {'약물을 입력하세요':'DRUG was not chosen', 'Vancomycin': 'VCM', 'Amikacin': 'AMK', 'Gentamicin': 'GTM', 'Digoxin': 'DGX', 'Valproic Acid': 'VPA', 'Phenytoin': 'PHT','Carbamazepine':'CBZ'}
         # self.short_drugname = ''
 
         self.pt_term_dict = dict()
@@ -623,13 +628,15 @@ class snubh_cpt_tdm(tdm):
                                    'AMK': ['AMIKACIN', ],
                                    'VPA': ['ORFIL', 'DEPAKOTE', 'DEPAKIN'],
                                    'GTM': ['GENTAMICIN', ],
+                                   'CBZ': ['CARBAMAZEPINE', ],
                                    }
 
         self.tdm_target_txt_dict = {'VCM': '400-600 mg*h/L',
                                     'DGX': '0.5-1.5 ng/mL',
                                     'AMK': 'Peak > 25, Trough < 5 ㎍/mL',
                                     'VPA': '50-100 ㎍/mL',
-                                    'GTM': 'Peak > 5, Trough < 1 ㎍/mL', }
+                                    'GTM': 'Peak > 5, Trough < 1 ㎍/mL',
+                                    'CBZ': '4-12 ㎍/mL',}
 
         # self.result_dir = f"{project_dir}/result"
         # self.resource_dir = f"{project_dir}/resource"
@@ -2371,12 +2378,16 @@ class snubh_cpt_tdm(tdm):
 
     def reflecting_ir_text(self):
 
-        ir_text = self.get_ir_text()
+        try:
 
-        prior_text = "= Interpretation : ".join(st.session_state['first_draft'].split("= Interpretation : ")[:-1])
-        later_text = "문의사항은 다음의 전화번호로." + st.session_state['first_draft'].split("문의사항은 다음의 전화번호로.")[-1]
-        st.session_state['first_draft'] = prior_text + ir_text + "\n\n\n" + later_text
+            ir_text = self.get_ir_text()
 
+            prior_text = "= Interpretation : ".join(st.session_state['first_draft'].split("= Interpretation : ")[:-1])
+            later_text = "문의사항은 다음의 전화번호로." + st.session_state['first_draft'].split("문의사항은 다음의 전화번호로.")[-1]
+            st.session_state['first_draft'] = prior_text + ir_text + "\n\n\n" + later_text
+
+        except:
+            st.error(f"Interpretation and Recommendation / Failed", icon=None)
 
     def offline_ir_text_generator(self, mode='manual', drug='', co_med_list=[]):
 
