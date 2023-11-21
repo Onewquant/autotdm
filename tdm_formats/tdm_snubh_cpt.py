@@ -371,7 +371,7 @@ class snubh_cpt_tdm(tdm):
                 elif k=='pedi':
                     continue
                 elif k=='drug':
-                    st.selectbox(v, ('약물을 입력하세요','Vancomycin', 'Amikacin', 'Gentamicin', 'Digoxin', 'Valproic Acid', 'Phenytoin'), key=k)
+                    st.selectbox(v, ('약물을 입력하세요','Vancomycin', 'Amikacin', 'Gentamicin', 'Digoxin', 'Valproic Acid', 'Carbamazepine', 'Drug Consulting'), key=k)
                     continue
                 else:
                     st.text_input(v, key=k)
@@ -399,54 +399,116 @@ class snubh_cpt_tdm(tdm):
                     else:
                         st.text_area(v, key=k)
 
-                st.button('Generate the first draft', on_click=self.execution_of_generating_first_draft, key='generate_first_draft')
+                if st.session_state['drug'] != 'Drug Consulting':
+                    st.button('Generate the first draft', on_click=self.execution_of_generating_first_draft, key='generate_first_draft')
+                else:
+                    st.button('Generate the first evaluation', on_click=self.execution_of_generating_first_evaluation, key='generate_first_evaluation')
 
+            if st.session_state['drug']!='Drug Consulting':
 
-            with self.rcol2:
+                with self.rcol2:
 
-                st.text_area(label='Draft', value='', height=594, key='first_draft')
+                    st.text_area(label='Draft', value='', height=594, key='first_draft')
 
-                self.rcol3, self.rcol4, self.rcol5 = st.columns([1, 2, 3], gap="medium")
+                    self.rcol3, self.rcol4, self.rcol5 = st.columns([1, 2, 3], gap="medium")
 
-                with self.rcol3:
-                    st.download_button(label='Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
-                with self.rcol4:
-                    st.button('Rec for Research', on_click=self.download_button_manager, args=('result',), key='rec_for_research')
-                with self.rcol5:
-                    if 'ps_viewer' not in st.session_state:
-                        st.session_state['ps_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
-                    st.download_button(label='DDI Evaluation', data=convert_df(st.session_state['ps_viewer']), file_name=f"(DDI_EVAL) {self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.csv", mime="text/csv", key='ddi_eval_download')
-                st.divider()
+                    with self.rcol3:
+                        st.download_button(label='Download', data=st.session_state['first_draft'], file_name=f"{self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.txt")
+                    with self.rcol4:
+                        st.button('Rec for Research', on_click=self.download_button_manager, args=('result',), key='rec_for_research')
+                    with self.rcol5:
+                        if 'ddi_viewer' not in st.session_state:
+                            st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
+                        st.download_button(label='DDI Evaluation', data=convert_df(st.session_state['ddi_viewer']), file_name=f"(DDI_EVAL) {self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.csv", mime="text/csv", key='ddi_eval_download')
+                    st.divider()
 
-                st.write(f"<PK parameters 입력>")
+                    st.write(f"<PK parameters 입력>")
 
-                self.define_ir_info()
+                    self.define_ir_info()
 
-                for k, v in self.ir_term_dict[self.short_drugname_dict[st.session_state['drug']]].items():
-                    if (self.short_drugname_dict[st.session_state['drug']]=='VCM') and (k=='vc') and (st.session_state['age'] <= 18):
-                        st.session_state[k] = '-'
-                        continue
-                    else: st.number_input(label=v, min_value=0.1, max_value=1500.0, step=1.0, key=k)
+                    for k, v in self.ir_term_dict[self.short_drugname_dict[st.session_state['drug']]].items():
+                        if (self.short_drugname_dict[st.session_state['drug']]=='VCM') and (k=='vc') and (st.session_state['age'] <= 18):
+                            st.session_state[k] = '-'
+                            continue
+                        else: st.number_input(label=v, min_value=0.1, max_value=1500.0, step=1.0, key=k)
 
-                st.button('Reflect Parameters', on_click=self.reflecting_parameters, key='reflect_parameters')
+                    st.button('Reflect Parameters', on_click=self.reflecting_parameters, key='reflect_parameters')
 
-                st.divider()
+                    st.divider()
 
-                st.write(f"<Concentration Level & Recommendations>")
+                    st.write(f"<Concentration Level & Recommendations>")
 
-                self.ir_drug_dict = self.ir_recomm_dict[self.short_drugname_dict[st.session_state['drug']]]
+                    self.ir_drug_dict = self.ir_recomm_dict[self.short_drugname_dict[st.session_state['drug']]]
 
-                st.selectbox('농도Level', ['선택하세요',]+list(self.ir_drug_dict.keys()), key='ir_conc')
+                    st.selectbox('농도Level', ['선택하세요',]+list(self.ir_drug_dict.keys()), key='ir_conc')
 
-                if st.session_state['ir_conc']!='선택하세요':
+                    if st.session_state['ir_conc']!='선택하세요':
 
-                    self.recom_tot_dict = self.ir_drug_dict[st.session_state['ir_conc']]
+                        self.recom_tot_dict = self.ir_drug_dict[st.session_state['ir_conc']]
 
-                    st.selectbox('항정상태여부', ['선택하세요', ] + [k.split('_')[1] for k in self.recom_tot_dict.keys() if k.split('_')[0]=='rec1'], key='ir_state')
+                        st.selectbox('항정상태여부', ['선택하세요', ] + [k.split('_')[1] for k in self.recom_tot_dict.keys() if k.split('_')[0]=='rec1'], key='ir_state')
 
-                    st.selectbox('Method', ['선택하세요', ] + [k.split('_')[1] for k in self.recom_tot_dict.keys() if k.split('_')[0]=='rec2'], key='ir_method')
+                        st.selectbox('Method', ['선택하세요', ] + [k.split('_')[1] for k in self.recom_tot_dict.keys() if k.split('_')[0]=='rec2'], key='ir_method')
 
-                    st.button('Reflect IR', on_click=self.reflecting_ir_text, key='reflect_ir')
+                        st.button('Reflect IR', on_click=self.reflecting_ir_text, key='reflect_ir')
+
+            if st.session_state['drug'] == 'Drug Consulting':
+                with self.rcol2:
+                    st.write(f"<Drug-Drug Interation Monitor>")
+                    if 'ddi_viewer' not in st.session_state:
+                        st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
+                    # if 'unique_included_drugs' not in st.session_state:
+                    #     st.session_state['unique_included_drugs'] = list(st.session_state['ddi_viewer']['drug'])
+                    # st.multiselect(label='포함약물선택', options=st.session_state['unique_included_drugs'], key='ddi_drug_selection', on_change=self.execution_of_generating_first_evaluation)
+                    # st.dataframe(st.session_state['ddi_viewer'][st.session_state['ddi_viewer']['drug'].isin(st.session_state['unique_included_drugs'])].reset_index(drop=True),
+                    st.dataframe(st.session_state['ddi_viewer']
+                                 # column_order=list(st.session_state['ddi_viewer'].columns),
+                                 # column_config={"URL주소": st.column_config.LinkColumn("URL주소")}
+                                 )
+
+                    st.divider()
+
+                    st.write(f"<Drug-Lab Interation Monitor>")
+                    if 'dli_viewer' not in st.session_state:
+                        st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value'])
+                    # if 'unique_included_drugs' not in st.session_state:
+                    #     st.session_state['unique_included_drugs'] = list(st.session_state['dli_viewer']['drug'])
+                    # st.multiselect(label='포함Lab선택', options=st.session_state['unique_included_lab'], key='dli_lab_selection', on_change=self.execution_of_generating_first_evaluation)
+                    # st.dataframe(st.session_state['dli_viewer'][st.session_state['dli_viewer']['drug'].isin(st.session_state['unique_included_drugs'])].reset_index(drop=True),
+                    st.dataframe(st.session_state['dli_viewer']
+                                 # column_order=list(st.session_state['dli_viewer'].columns),
+                                 # column_config={"URL주소": st.column_config.LinkColumn("URL주소")}
+                                 )
+
+                    st.divider()
+
+                    st.write(f"<Drug-Vital Sign Interation Monitor>")
+                    if 'dvi_viewer' not in st.session_state:
+                        st.session_state['dvi_viewer'] = pd.DataFrame(columns=['date', 'vs', 'value'])
+                    # if 'unique_included_drugs' not in st.session_state:
+                    #     st.session_state['unique_included_drugs'] = list(st.session_state['dvi_viewer']['drug'])
+                    # st.multiselect(label='포함VS선택', options=st.session_state['unique_included_vs'], key='dvi_vs_selection', on_change=self.execution_of_generating_first_evaluation)
+                    # st.dataframe(st.session_state['dvi_viewer'][st.session_state['dvi_viewer']['drug'].isin(st.session_state['unique_included_vs'])].reset_index(drop=True),
+                    st.dataframe(st.session_state['dvi_viewer']
+                                 # column_order=list(st.session_state['dvi_viewer'].columns),
+                                 # column_config={"URL주소": st.column_config.LinkColumn("URL주소")}
+                                 )
+
+                    st.divider()
+
+    def execution_of_generating_first_evaluation(self):
+        try:
+            for k in ('vs', 'lab', 'order'):
+                v = st.session_state[k]
+                if k == 'vs':
+                    self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
+                elif k == 'lab':
+                    self.pt_dict[k] = self.get_parsed_lab_df(value=v)
+                elif k == 'order':
+                    self.pt_dict['order'] = self.parse_order_record(order_str=v)
+                    self.ddi_viewer_analysis(included_prx_sig='/Y')
+        except:
+            st.error(f"{st.session_state['id']} / {st.session_state['name']} / DDI Evaluation / Generation Failed", icon=None)
 
     def execution_of_generating_first_draft(self):
         # self.tdm_writer = st.session_state['tdm_writer']
@@ -499,29 +561,9 @@ class snubh_cpt_tdm(tdm):
             st.error(f"{st.session_state['id']} / {st.session_state['name']} / 1st Draft / Generation Failed",icon=None)
 
         try:
-            self.patient_state_viewer_analysis(included_prx_sig='/Y')
+            self.ddi_viewer_analysis(included_prx_sig='/Y')
         except:
             st.error(f"{st.session_state['id']} / {st.session_state['name']} / DDI Evaluation / Generation Failed", icon=None)
-
-            # st.session_state['memo'] = str(st.session_state['order_df'].head())
-            # st.session_state['memo'] = str(self.order_df.head())
-
-            # self.order_data_prep_for_ddi_analysis()
-
-            # crst_str = 'drugs\t'
-            # for c in list(st.session_state['drug_use_df'].columns):
-            #     crst_str+= f'{c}\t'
-            # crst_str+='\n'
-            # for inx, row in st.session_state['drug_use_df'].iterrows():
-            #     crst_str += f'{inx}\t'
-            #     for rc_inx, rc_val in enumerate(row):
-            #         crst_str += f'{rc_val}\t'
-            #     crst_str += '\n'
-            #
-            # st.session_state['first_draft'] = crst_str
-            # st.session_state['first_draft'] = str(st.session_state['drug_use_df'])
-
-
 
 
     def retry_execution(self):
@@ -536,8 +578,9 @@ class snubh_cpt_tdm(tdm):
         st.session_state['weight'] = 1.0
         st.session_state['drug'] = '약물을 입력하세요'
         st.session_state['order_df'] = pd.DataFrame(columns=['orders'])
-        st.session_state['ps_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
-
+        st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
+        st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value'])
+        st.session_state['dvi_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value'])
 
     def individual_vars(self):
         self.prev_date = ''
@@ -597,9 +640,13 @@ class snubh_cpt_tdm(tdm):
                                                 'lab': 'Lab 검사결과',
                                                 'order': '전체오더'
                                                 },
+                                        'DCS': {'vs': 'Vital Sign - (BT)',
+                                                'lab': 'Lab 검사결과',
+                                                'order': '전체오더'
+                                                },
                                         }
 
-        self.short_drugname_dict = {'약물을 입력하세요':'DRUG was not chosen', 'Vancomycin': 'VCM', 'Amikacin': 'AMK', 'Gentamicin': 'GTM', 'Digoxin': 'DGX', 'Valproic Acid': 'VPA', 'Phenytoin': 'PHT','Carbamazepine':'CBZ'}
+        self.short_drugname_dict = {'약물을 입력하세요':'DRUG was not chosen', 'Vancomycin': 'VCM', 'Amikacin': 'AMK', 'Gentamicin': 'GTM', 'Digoxin': 'DGX', 'Valproic Acid': 'VPA', 'Phenytoin': 'PHT','Carbamazepine':'CBZ', 'Drug Consulting':'DCS'}
         # self.short_drugname = ''
 
         self.pt_term_dict = dict()
@@ -643,6 +690,7 @@ class snubh_cpt_tdm(tdm):
                                    'VPA': ['ORFIL', 'DEPAKOTE', 'DEPAKIN'],
                                    'GTM': ['GENTAMICIN', ],
                                    'CBZ': ['CARBAMAZEPINE', ],
+
                                    }
 
         self.tdm_target_txt_dict = {'VCM': '400-600 mg*h/L',
@@ -953,7 +1001,7 @@ class snubh_cpt_tdm(tdm):
             target_str=target_str.replace(tup[0], tup[1])
         return target_str
 
-    def patient_state_viewer_analysis(self, included_prx_sig='/Y'):
+    def ddi_viewer_analysis(self, included_prx_sig='/Y'):
 
         ps_viewer_df = list()
         # for inx, row in st.session_state['order_df'].iterrows():
@@ -967,9 +1015,9 @@ class snubh_cpt_tdm(tdm):
         ps_viewer_df = pd.DataFrame(ps_viewer_df)
 
         if len(ps_viewer_df)>0:
-            st.session_state['ps_viewer'] = ps_viewer_df.pivot_table(index='drug', columns='date', values='value', aggfunc=np.nanmax).reset_index(drop=False)
+            st.session_state['ddi_viewer'] = ps_viewer_df.pivot_table(index='drug', columns='date', values='value', aggfunc=np.nanmax).reset_index(drop=False)
         else:
-            st.session_state['ps_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
+            st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
 
     def parse_order_record(self, order_str):
         # order_str = input().strip()
@@ -1347,6 +1395,7 @@ class snubh_cpt_tdm(tdm):
         elif drug == 'AMK':dodf = dodf[dodf['처방지시'].map(lambda x: False if ("AMIKACIN TDM" in x.upper()) or ("AMIKACIN 농도 [SERUM]" in x.upper()) or (x[:4] in ('* PO','* IV'))else True)].reset_index(drop=True)
         elif drug == 'GTM':dodf = dodf[dodf['처방지시'].map(lambda x: False if ("GENTAMICIN TDM" in x.upper()) or ("GENTAMICIN 농도 [SERUM]" in x.upper()) or (x[:4] in ('* PO', '* IV')) else True)].reset_index(drop=True)
         elif drug == 'VPA':dodf = dodf[dodf['처방지시'].map(lambda x: False if ("VALPROATE TDM" in x.upper()) or ("VALPROATE 농도 [SERUM]" in x.upper()) or (x[:4] in ('* PO','* IV'))else True)].reset_index(drop=True)
+        elif drug == 'CBZ':dodf = dodf[dodf['처방지시'].map(lambda x: False if ("CARBAMAZEPINE TDM" in x.upper()) or ("CARBAMAZEPINE 농도 [SERUM]" in x.upper()) or (x[:4] in ('* PO', '* IV')) else True)].reset_index(drop=True)
         else:dodf = dodf[dodf['처방지시'].map(lambda x: False if (f"{self.drug_fullname_dict[drug][0]} TDM" in x.upper()) or (f"{self.drug_fullname_dict[drug][0]} 농도 [SERUM]" in x.upper()) or (x[:4] in ('* PO','* IV'))else True)].reset_index(drop=True)
 
 
@@ -1376,6 +1425,7 @@ class snubh_cpt_tdm(tdm):
             elif drug == 'AMK': ddparsing_list = [dconc.strip() for dconc in (re.findall(r' [\d]+g ', doinfo_str) + re.findall(r' [\d]+mg ', doinfo_str))]
             elif drug == 'GTM': ddparsing_list = [dconc.strip() for dconc in (re.findall(r' [\d]+g ', doinfo_str) + re.findall(r' [\d]+mg ', doinfo_str))]
             elif drug == 'VPA': ddparsing_list = [dconc.strip() for dconc in (re.findall(r' [\d]+g ', doinfo_str) + re.findall(r' [\d]+mg ', doinfo_str))]
+            elif drug == 'CBZ': ddparsing_list = [dconc.strip() for dconc in (re.findall(r' [\d]+g ', doinfo_str) + re.findall(r' [\d]+mg ', doinfo_str))]
             else: ddparsing_list = [dconc.strip() for dconc in (re.findall(r' [\d]+g ', doinfo_str) + re.findall(r' [\d]+mg ', doinfo_str))]
 
             if len(ddparsing_list)==0:
@@ -1404,7 +1454,7 @@ class snubh_cpt_tdm(tdm):
             for al in acting_list:
                 if al=='': continue
                 else:
-                    if al[-1].upper() in ('Y','Z','C'):
+                    if al[-1].upper() in ('Y','Z','C','N'):
                         # al = y_acting_list[0]
                         al_split = al.split('/')
                         hr_min = al_split[0]
@@ -1615,6 +1665,7 @@ class snubh_cpt_tdm(tdm):
                               'GTM': ['Furosemide', 'Piperacillin/Tazobactam', 'Penem', 'avir', 'ovir', 'cillin', 'mycin', 'ceft', 'tacrolimus', 'cefepime', 'xacin', 'rifampicin', 'rifampin', 'sulfamethoxazol', 'trimethoprim', 'cilastatin', 'Metronidazole', 'Refampin', 'colistin', 'fungin', 'gentamicin', 'mycin', 'fluconazole', 'amikacin', 'cycloserine', 'ethambutol', 'ampotericin B', 'conazole'],
                               'DGX': ['spironolactone', 'diltiazem','prolol', 'dipine', 'cyclosporine', 'norepinephrine', 'carbedilol', 'esmolol', 'clonazepam','captopril', 'Triamterene', 'hydrochlorothiazide', 'Amiodarone', 'dronedarone', 'itraconazole', 'macrolide', 'clarythromycin, erythromycin, tetracyclin', 'verapamil', 'rifampin', 'Sucralfate', 'Alprazolam', 'calcium'],
                               'VPA': ['levetiracetam', 'penem', ],
+                              'CBZ': ['levetiracetam', 'penem', ],
                               }
         cm_except_list = [d.lower() for d in self.drug_fullname_dict[drug]]
         cm_cand_list = self.conc_mdx_dict[drug]
@@ -1793,7 +1844,6 @@ class snubh_cpt_tdm(tdm):
 
             conc_medi_txt = self.get_concomitant_mdx_text(drug=self.pt_dict['drug'])
             concomitant_medi_text = f"*CM\n{conc_medi_txt}\n\n" if conc_medi_txt!='' else f"*CM (-)\n\n"
-            # concentration_text = f"*Concentration\n{'테스트중입니다'}\n\n"
             concentration_text = f"*Concentration\n{self.get_drug_concentration_text(drug=self.pt_dict['drug'])}\n\n"
             comment_text = f"*Comment\n{f'{self.tdm_writer} ({get_tdm_dateform(self.tdm_date)}) '}\n\n"
 
@@ -1813,7 +1863,6 @@ class snubh_cpt_tdm(tdm):
 
             etc_text = f"\nVd(L/kg) \nVc \nCL (ml/min/kg) \nCL(L/hr) \nt1/2(hr) \nVd ss \n\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak :  ㎍/mL\n2) 추정 Trough :  ㎍/mL\n3) 추정 AUC :  mg*h/L\n\n= Interpretation : \n\n\n= Recommendation : \n1. \n\n2. \n\n문의사항은 다음의 전화번호로.\n임상약리학과 (내선 T. 3956)/Pf. 정재용, 윤성혜 (내선 T. 3956)"
 
-
             self.file_content= basic_info_text+hx_text+hd_text+cslt_text+vs_text+base_lab_text+lab_text+culture_text+drug_admin_text+concomitant_medi_text + concentration_text + comment_text + etc_text
 
         elif self.pt_dict['drug'] == 'DGX':
@@ -1826,11 +1875,6 @@ class snubh_cpt_tdm(tdm):
 
             lab_text = self.get_lab_text(drug=self.pt_dict['drug'])
 
-            # culture_text = f"*Cx\n{'테스트중입니다'}\n\n"
-
-            # prev_admin_text = f"*이전 투약력\n{'테스트중입니다'}\n\n"
-            # cur_admin_text = f"*현 투약력\n{'테스트중입니다'}\n\n"
-            # drug_admin_text = prev_admin_text + cur_admin_text
             drug_admin_text, prev_adm_date = self.get_drug_administration_hx_full_text(drug=self.pt_dict['drug'])
             drug_admin_text += "\n\n"
 
@@ -1838,11 +1882,8 @@ class snubh_cpt_tdm(tdm):
             cr_base_tups = base_lab_dict['Cr']
             gfr_base_tups = base_lab_dict['GFR']
 
-            # base_lab_text = f"Cr(base): ({cr_base_tups[0]}){cr_base_tups[1]}\nGFR(base): ({gfr_base_tups[0]}){gfr_base_tups[1]}\n\n"
-
             conc_medi_txt = self.get_concomitant_mdx_text(drug=self.pt_dict['drug'])
             concomitant_medi_text = f"*CM\n{conc_medi_txt}\n\n" if conc_medi_txt!='' else f"*CM (-)\n\n"
-            # concentration_text = f"*Concentration\n{'테스트중입니다'}\n\n"
             concentration_text = f"*Concentration\n{self.get_drug_concentration_text(drug=self.pt_dict['drug'])}\n\n"
             comment_text = f"*Comment\n{f'{self.tdm_writer} ({get_tdm_dateform(self.tdm_date)}) '}\n\n"
 
@@ -1874,7 +1915,6 @@ class snubh_cpt_tdm(tdm):
 
             conc_medi_txt = self.get_concomitant_mdx_text(drug=self.pt_dict['drug'])
             concomitant_medi_text = f"*CM\n{conc_medi_txt}\n\n" if conc_medi_txt!='' else f"*CM (-)\n\n"
-            # concentration_text = f"*Concentration\n{'테스트중입니다'}\n\n"
             concentration_text = f"*Concentration\n{self.get_drug_concentration_text(drug=self.pt_dict['drug'])}\n\n"
             comment_text = f"*Comment\n{f'{self.tdm_writer} ({get_tdm_dateform(self.tdm_date)}) '}\n\n"
 
@@ -1886,16 +1926,8 @@ class snubh_cpt_tdm(tdm):
             eeg_text = f"*EEG\n{self.get_eeg_text()}\n\n"
             cslt_text = f"*NR consult\n{self.pt_dict['consult']}\n\n"
 
-            # self.pt_dict['vs'] = self.get_vs_text(drug=self.pt_dict['drug'])
-            # vs_text = f"{self.pt_dict['vs']}\n"
-
             lab_text = self.get_lab_text(drug=self.pt_dict['drug'])
 
-            # culture_text = f"*Cx\n{'테스트중입니다'}\n\n"
-
-            # prev_admin_text = f"*이전 투약력\n{'테스트중입니다'}\n\n"
-            # cur_admin_text = f"*현 투약력\n{'테스트중입니다'}\n\n"
-            # drug_admin_text = prev_admin_text + cur_admin_text
             drug_admin_text, prev_adm_date = self.get_drug_administration_hx_full_text(drug=self.pt_dict['drug'])
             drug_admin_text += "\n\n"
 
@@ -1903,16 +1935,35 @@ class snubh_cpt_tdm(tdm):
             cr_base_tups = base_lab_dict['Cr']
             gfr_base_tups = base_lab_dict['GFR']
 
-            # base_lab_text = f"Cr(base): ({cr_base_tups[0]}){cr_base_tups[1]}\nGFR(base): ({gfr_base_tups[0]}){gfr_base_tups[1]}\n\n"
-
             conc_medi_txt = self.get_concomitant_mdx_text(drug=self.pt_dict['drug'])
             concomitant_medi_text = f"*CM\n{conc_medi_txt}\n\n" if conc_medi_txt!='' else f"*CM (-)\n\n"
             # concentration_text = f"*Concentration\n{'테스트중입니다'}\n\n"
             concentration_text = f"*Concentration\n{self.get_drug_concentration_text(drug=self.pt_dict['drug'])}\n\n"
             comment_text = f"*Comment\n{f'{self.tdm_writer} ({get_tdm_dateform(self.tdm_date)}) '}\n\n"
 
-            dgx_caution_text = "* Digoxin의 혈중 약물농도만으로는 약효 및 독성 발현 산출에 한계가 있으므로, 임상증상을 뒷받침하는 참고자료로 활용하시기 바랍니다."
-            etc_text = f"\nVd(L/kg) \nCL(L/hr) \nt1/2(hr) \n\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak :  ng/mL\n2) 추정 Trough :  ng/mL\n\n= Interpretation : \n\n\n= Recommendation : \n\n1. \n\n2. \n\n문의사항은 다음의 전화번호로.\n임상약리학과 (내선 T. 3956)/Pf. 정재용, 윤성혜 (내선 T. 3956)"
+            etc_text = f"\nVd(L/kg) \nCL(L/hr) \nt1/2(hr) \n\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak :  ㎍/mL\n2) 추정 Trough :  ㎍/mL\n\n= Interpretation : \n\n\n= Recommendation : \n\n1. \n\n2. \n\n문의사항은 다음의 전화번호로.\n임상약리학과 (내선 T. 3956)/Pf. 정재용, 윤성혜 (내선 T. 3956)"
+
+            self.file_content = basic_info_text + hx_text + cslt_text + eeg_text + lab_text + drug_admin_text + concomitant_medi_text + concentration_text + comment_text + etc_text
+
+        elif self.pt_dict['drug'] == 'CBZ':
+            eeg_text = f"*EEG\n{self.get_eeg_text()}\n\n"
+            cslt_text = f"*NR consult\n{self.pt_dict['consult']}\n\n"
+
+            lab_text = self.get_lab_text(drug=self.pt_dict['drug'])
+
+            drug_admin_text, prev_adm_date = self.get_drug_administration_hx_full_text(drug=self.pt_dict['drug'])
+            drug_admin_text += "\n\n"
+
+            base_lab_dict = self.get_base_cr_gfr_text(prev_adm_date=prev_adm_date)
+            cr_base_tups = base_lab_dict['Cr']
+            gfr_base_tups = base_lab_dict['GFR']
+
+            conc_medi_txt = self.get_concomitant_mdx_text(drug=self.pt_dict['drug'])
+            concomitant_medi_text = f"*CM\n{conc_medi_txt}\n\n" if conc_medi_txt!='' else f"*CM (-)\n\n"
+            concentration_text = f"*Concentration\n{self.get_drug_concentration_text(drug=self.pt_dict['drug'])}\n\n"
+            comment_text = f"*Comment\n{f'{self.tdm_writer} ({get_tdm_dateform(self.tdm_date)}) '}\n\n"
+
+            etc_text = f"\nVd(L/kg) \nCL(L/hr) \nt1/2(hr) \n\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak :  ㎍/mL\n2) 추정 Trough :  ㎍/mL\n\n= Interpretation : \n\n\n= Recommendation : \n\n1. \n\n2. \n\n문의사항은 다음의 전화번호로.\n임상약리학과 (내선 T. 3956)/Pf. 정재용, 윤성혜 (내선 T. 3956)"
 
             self.file_content = basic_info_text + hx_text + cslt_text + eeg_text + lab_text + drug_admin_text + concomitant_medi_text + concentration_text + comment_text + etc_text
 
@@ -1958,6 +2009,12 @@ class snubh_cpt_tdm(tdm):
                                      'est_peak': '추정 peak 농도',
                                      'est_trough': '추정 trough 농도',
                                      },
+                             'CBZ': {'half_life': 'Half-life (hr)',
+                                     'total_vd': 'Total Vd (L)',
+                                     'total_cl': 'Total Cl (L/hr)',
+                                     'est_peak': '추정 peak 농도',
+                                     'est_trough': '추정 trough 농도',
+                                     },
                              }
 
         self.comed_recstr_dict = {'VCM': {'amikacin': 'vancomycin과 병용투여 시 이독성 위험이 증가하고 신기능을 저하시킬 수 있으므로, ',
@@ -1998,6 +2055,7 @@ class snubh_cpt_tdm(tdm):
                                   'DGX': {},
                                   'VPA': {},
                                   'PHT': {},
+                                  'CBZ': {},
                                   }
 
         # mode = 'manual'
@@ -2203,12 +2261,39 @@ class snubh_cpt_tdm(tdm):
                                                  'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 신기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규 채혈을 통한 TDM f/u하시어 투약 재개 시점 및 재개 용법을 재확인하시기 바랍니다.',
                                                  },
                                        },
+                               'CBZ': {'Subtherapeutic': {'rec1_SS': '1. Subtherapeutic level입니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Subtherapeutic level에 이를 것으로 예상됩니다. 용법 변경 권장합니다.\n\n',
+                                                          'rec2_공통': '2. 적극적인 증상 조절을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)]로 용법 변경 권장하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다. 약물의 효능이 기대 이하이거나 독성 의심 증상 발현 시 f/u 시기를 앞당길 수 있습니다. ',
+                                                          },
+                                       'Lowermargin': {
+                                           'rec1_SS': '1. Lower margin of therapeutic level입니다. 증상 조절이 원활하다면 현 용법을 유지할 수 있습니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Lower margin of therapeutic level에 이를 것으로 예상됩니다. 증상 조절이 원활하다면 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 적극적인 증상 조절을 위해 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                           },
+                                       'Therapeutic': {'rec1_SS': '1. Therapeutic level 입니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Therapeutic level에 이를 것으로 예상됩니다. 현 용법 유지 가능합니다.\n\n',
+                                                       'rec2_공통': '2. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                                       },
+                                       'Uppermargin': {
+                                           'rec1_SS': '1. Upper margin of therapeutic level 입니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec1_NSS': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Upper margin of therapeutic level에 이를 것으로 예상됩니다. 적극적인 증상 조절이 필요한 경우, 당분간 현 용법 유지 가능합니다.\n\n',
+                                           'rec2_공통': '2. 독성증상 발현 예방을 위하여 용법 변경을 고려하시는 경우에는 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.', },
+                                       'Toxic': {'rec1_SS': '1. Toxic level입니다. ',
+                                                 'rec1_NSS-nontoxic': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현 용법 유지 시 Toxic level에 도달할 것으로 예상됩니다. ',
+                                                 'rec1_NSS-toxic': '1. 아직 항정상태에 도달하지 않아 정확한 약동학적 파라미터의 산출에 제한이 있으나, 현재 Toxic level입니다. ',
+                                                 'rec2_용법변경': '용법 변경 권장합니다.\n\n2. 독성증상 발현 예방을 위하여 다음 투약부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                                 'rec2_휴약후변경': '휴약 및 용법 변경 권장합니다.\n\n2. 독성 증상 발현 예방을 위하여 다음 예정된 투약 [기존예정된투약일(요일,시간)] 부터 휴약하시고 약물 농도가 충분히 감소할 것으로 예상되는 [변경용법적용날짜(요일,시간,예상농도)] 이후부터 [변경약물용법(용량,투약방식,투여간격)] 로 용법 변경 가능하며, 이 때 예상되는 항정상태에서의 농도는 아래와 같습니다.\n\n3. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, [f/u날짜(요일)] 투약 30분 전 채혈을 통한 TDM f/u하시어 용법의 적절성을 재확인하시기 바랍니다.',
+                                                 'rec2_휴약후f/u': '휴약 권장합니다.\n\n2. 암모니아 농도를 포함한 간기능 및 임상상의 변화에 유의하시고, 휴약을 유지하시다가, [f/u날짜(요일)] 정규채혈로 TDM 재의뢰하시어 재개 가능 여부를 재확인 하시기 바랍니다.',
+                                                 },
+                                       },
                                }
 
         self.threshold_dict = {"AMK": {'toxic': 25.1, 'upper_margin': 24.9, 'lower_margin': 5.1, 'subthera': 4.9},
                                "VCM": {'toxic': 610, 'upper_margin': 590, 'lower_margin': 410, 'subthera': 395},
                                "DGX": {'toxic': 1.51, 'upper_margin': 1.49, 'lower_margin': 0.51, 'subthera': 0.49},
                                "GTM": {'toxic': 610, 'upper_margin': 590, 'lower_margin': 410, 'subthera': 395},
+                               "VPA": {},
+                               "CBZ": {},
                                }
 
 
@@ -2271,6 +2356,10 @@ class snubh_cpt_tdm(tdm):
 
 
         elif drug == 'VPA':
+            calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
+            drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[drug]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
+
+        elif drug == 'CBZ':
             calc_text = f"Vd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
             drug_conc_text = f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[drug]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
 
@@ -2355,6 +2444,11 @@ class snubh_cpt_tdm(tdm):
             calc_text=f"[PK Parameters]\n\nVd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
             drug_conc_text=f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
 
+        elif drug == 'CBZ':
+            calc_text=f"[PK Parameters]\n\nVd(L/kg) {self.ir_dict['vd']}\nCL(L/hr) {round(self.ir_dict['total_cl'], round_num)}\nt1/2(hr) {round(self.ir_dict['half_life'], round_num)}"
+            drug_conc_text=f"\n==========================================================================\n= Drug concentration ( Target : {self.tdm_target_txt_dict[self.pt_dict['drug']]})\n1) 추정 Peak: {float(round(self.ir_dict['est_peak'], round_num))} ㎍/mL\n2) 추정 Trough: {float(round(self.ir_dict['est_trough'], round_num)) if self.ir_dict['est_trough'] >= 0.3 else '<0.3'} ㎍/mL\n\n"
+
+
         print(calc_text+'\n ')
         print(drug_conc_text)
         result_text = calc_text+drug_conc_text
@@ -2390,9 +2484,9 @@ class snubh_cpt_tdm(tdm):
         self.ir_text = f"= Interpretation : \n{iconc_str}\n\n= Recommendation : \n{prefix_str}{rec1_str}{rec2_str}"
         # st.session_state['memo'] = str('농도는 아래와 같습니다.' in self.ir_text)
         if '농도는 아래와 같습니다.' in self.ir_text:
-            if (drug == 'AMK') or (drug == 'GTM'): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL"
+            if drug in ('AMK', 'GTM', 'VPA', 'CBZ') : self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL"
             elif drug == 'VCM': self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL\n3) 변경시 예상 AUC :  mg*h/L"
-            elif (drug == 'DGX') or (drug == 'VPA'): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ng/mL\n2) 변경시 예상 Trough :  ng/mL"
+            elif (drug == 'DGX'): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[drug]})\n1) 변경시 예상 Peak :  ng/mL\n2) 변경시 예상 Trough :  ng/mL"
             else: pass
 
         self.ir_text = self.ir_text.replace('\n\n', '\n \n')
@@ -2477,7 +2571,7 @@ class snubh_cpt_tdm(tdm):
 
             self.ir_text = f"= Interpretation : \n{iconc_str}\n\n= Recommendation : \n{prefix_str}{rec1_str}{rec2_str}"
             if '농도는 아래와 같습니다.' in self.ir_text:
-                if (drug in ('AMK', 'GTM', 'VPA')): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL"
+                if (drug in ('AMK', 'GTM', 'VPA', 'CBZ')): self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL"
                 elif drug=='VCM': self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ㎍/mL\n2) 변경시 예상 Trough :  ㎍/mL\n3) 변경시 예상 AUC :  mg*h/L"
                 elif (drug=='DGX') : self.ir_text += f"\n\n= 변경시 예상농도 ( Target: {self.tdm_target_txt_dict[self.short_drugname_dict[st.session_state['drug']]]})\n1) 변경시 예상 Peak :  ng/mL\n2) 변경시 예상 Trough :  ng/mL"
                 else: pass
@@ -2494,7 +2588,7 @@ class snubh_cpt_tdm(tdm):
     def get_drug_concentration_text(self, drug):
         # drug = self.pt_dict['drug']
         self.concentration_text = ""
-        self.concentration_dict = {"VCM":"Vanco", "DGX":"Digoxin", "AMK":"Amikacin", "VPA":"Valproic", "GTM":"Gentamicin" }
+        self.concentration_dict = {"VCM":"Vanco", "DGX":"Digoxin", "AMK":"Amikacin", "VPA":"Valproic", "GTM":"Gentamicin", "CBZ":"Carbamazepine",}
         dc_cols = ['date',self.concentration_dict[drug]]
         self.concentration_df = pd.DataFrame(columns=dc_cols)
         try:
