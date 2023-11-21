@@ -353,7 +353,8 @@ class snubh_cpt_tdm(tdm):
         with self.rcol1:
             for k, v in self.basic_pt_term_dict.items():
                 if k=='tdm_date':
-                    st.date_input(v, datetime.today(), key=k)
+                    st.session_state[k] = st.date_input(v, datetime.today())
+                    # st.date_input(v, datetime.today(), key=k)
                 elif k=='sex':
                     st.radio(v,options=('남','여'), horizontal=True, key=k)
                     continue
@@ -400,6 +401,7 @@ class snubh_cpt_tdm(tdm):
 
                 st.button('Generate the first draft', on_click=self.execution_of_generating_first_draft, key='generate_first_draft')
 
+
             with self.rcol2:
 
                 st.text_area(label='Draft', value='', height=594, key='first_draft')
@@ -411,9 +413,9 @@ class snubh_cpt_tdm(tdm):
                 with self.rcol4:
                     st.button('Rec for Research', on_click=self.download_button_manager, args=('result',), key='rec_for_research')
                 with self.rcol5:
-                    # st.session_state['drug_use_df'] = pd.DataFrame(columns=['date', 'drug', 'value'])
-                    st.download_button(label='DDI Evaluation', data=convert_df(st.session_state['ps_viewer']), file_name=f"(DDI_EVAL) {self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.csv", mime="text/csv", on_click=self.patient_state_viewer_analysis, args=('/Y',) , key='ddi_eval_download')
-
+                    if 'ps_viewer' not in st.session_state:
+                        st.session_state['ps_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
+                    st.download_button(label='DDI Evaluation', data=convert_df(st.session_state['ps_viewer']), file_name=f"(DDI_EVAL) {self.short_drugname_dict[st.session_state['drug']]}_{st.session_state['name']}_{st.session_state['id']}_{datetime.strftime(st.session_state['tdm_date'],'%Y%m%d')}.csv", mime="text/csv", key='ddi_eval_download')
                 st.divider()
 
                 st.write(f"<PK parameters 입력>")
@@ -485,12 +487,24 @@ class snubh_cpt_tdm(tdm):
                 elif k=='lab':
                     self.pt_dict[k] = self.get_parsed_lab_df(value=v)
                 elif k=='order':
+                    # st.session_state['order_df'] = self.parse_order_record(order_str=v)
+                    # self.pt_dict[k] = st.session_state['order_df'].copy()
                     self.pt_dict[k] = self.parse_order_record(order_str=v)
                 else:
                     self.pt_dict[k] = v
 
             self.generate_tdm_reply_text()
             st.session_state['first_draft'] = self.file_content
+        except:
+            st.error(f"{st.session_state['id']} / {st.session_state['name']} / 1st Draft / Generation Failed",icon=None)
+
+        try:
+            self.patient_state_viewer_analysis(included_prx_sig='/Y')
+        except:
+            st.error(f"{st.session_state['id']} / {st.session_state['name']} / DDI Evaluation / Generation Failed", icon=None)
+
+            # st.session_state['memo'] = str(st.session_state['order_df'].head())
+            # st.session_state['memo'] = str(self.order_df.head())
 
             # self.order_data_prep_for_ddi_analysis()
 
@@ -508,8 +522,6 @@ class snubh_cpt_tdm(tdm):
             # st.session_state['first_draft'] = str(st.session_state['drug_use_df'])
 
 
-        except:
-            st.error(f"{st.session_state['id']} / {st.session_state['name']} / 1st Draft / Generation Failed", icon=None)
 
 
     def retry_execution(self):
@@ -523,6 +535,8 @@ class snubh_cpt_tdm(tdm):
         st.session_state['height'] = 1.0
         st.session_state['weight'] = 1.0
         st.session_state['drug'] = '약물을 입력하세요'
+        st.session_state['order_df'] = pd.DataFrame(columns=['orders'])
+        st.session_state['ps_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
 
 
     def individual_vars(self):
@@ -940,20 +954,22 @@ class snubh_cpt_tdm(tdm):
         return target_str
 
     def patient_state_viewer_analysis(self, included_prx_sig='/Y'):
-        self.ps_viewer_df = list()
-        # st.session_state['memo'] = str(self.order_df['Acting'].iloc[16])
-        for inx, row in self.order_df.iterrows():
+
+        ps_viewer_df = list()
+        # for inx, row in st.session_state['order_df'].iterrows():
+        for inx, row in self.pt_dict['order'].iterrows():
             if (included_prx_sig in row['Acting']) and len(re.findall(r'\([A-Za-z]*\)',row['처방지시']))>0:
                 drug_str = re.findall(r'\([A-Za-z]*\)',row['처방지시'])[0][1:-1]
                 if drug_str in ('ASAP',):
                     continue
                 else:
-                    self.ps_viewer_df.append({'date':row['date'], 'drug':drug_str, 'value':1})
-        self.ps_viewer_df = pd.DataFrame(self.ps_viewer_df)
-        # st.session_state['memo'] = str(self.drug_orders_df)
-        if len(self.ps_viewer_df)>0:
-            self.ps_viewer_df = self.ps_viewer_df.pivot_table(index=['drug'], columns=['date'], values=['value'], aggfunc=np.nanmax)
-        st.session_state['ps_viewer'] = self.ps_viewer_df.copy()
+                    ps_viewer_df.append({'date':row['date'], 'drug':drug_str, 'value':1})
+        ps_viewer_df = pd.DataFrame(ps_viewer_df)
+
+        if len(ps_viewer_df)>0:
+            st.session_state['ps_viewer'] = ps_viewer_df.pivot_table(index='drug', columns='date', values='value', aggfunc=np.nanmax).reset_index(drop=False)
+        else:
+            st.session_state['ps_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
 
     def parse_order_record(self, order_str):
         # order_str = input().strip()

@@ -31,7 +31,7 @@ def reset_button():
     st.session_state.hospital = '병원을 선택하세요'
     st.session_state.tdm_division = '학과를 선택하세요'
     st.session_state.tdm_writer = ''
-    st.session_state.ps_viewer = pd.DataFrame(columns=['date', 'drug', 'value'])
+    # st.session_state.ps_viewer = pd.DataFrame(columns=['date', 'drug', 'value'])
 
 
 def retry_button():
@@ -46,7 +46,7 @@ with st.sidebar:
     st.selectbox('병원', ('병원을 선택하세요','분당서울대학교병원', '서울대학교병원', ), key='hospital')
     st.selectbox('학과', ('학과를 선택하세요','임상약리학과', '진단검사의학과', '약제부',), key='tdm_division')
     st.text_input('사용자명', key='tdm_writer')
-    st.session_state['ps_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
+    # st.session_state['ps_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
     # st.text_input('저장경로', value='C:', key='download_path')
 
     st.divider()
@@ -59,13 +59,9 @@ with st.sidebar:
     with scol2:
         st.button('Re-try', on_click=retry_button)
 
-    monitoring_str = ''
-    # monitoring_str = '{'
-    # for k, v in st.session_state.items():
-    #     if k!='monitor': continue
-    #     monitoring_str += f"'{k}': '{v}',\n"
-    # monitoring_str += '}'
-    st.text_area('Memo', monitoring_str, key='memo')
+    if 'memo' not in st.session_state:
+        st.session_state['memo'] = ''
+    st.text_area('Memo', st.session_state['memo'])
 
 if (st.session_state['hospital']=='병원을 선택하세요') and (st.session_state['tdm_division']=='병원을 선택하세요'):
    pass
