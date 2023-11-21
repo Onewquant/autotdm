@@ -1008,10 +1008,17 @@ class snubh_cpt_tdm(tdm):
         for inx, row in self.pt_dict['order'].iterrows():
             if (included_prx_sig in row['Acting']) and len(re.findall(r'\([A-Za-z]*\)',row['처방지시']))>0:
                 drug_str = re.findall(r'\([A-Za-z]*\)',row['처방지시'])[0][1:-1]
+
+                pharmexam_list = re.findall(r'[\d][\d][\d][\d]-[\d][\d]-[\d][\d]', row['약국/검사']) + re.findall(r'[\d][\d][\d][\d]-[\d][\d]-[\d][\d]', row['Acting'])
+                if len(pharmexam_list) == 0:
+                    drug_date = row['date']
+                else:
+                    drug_date = max(pharmexam_list)
+
                 if drug_str in ('ASAP',):
                     continue
                 else:
-                    ps_viewer_df.append({'date':row['date'], 'drug':drug_str, 'value':1})
+                    ps_viewer_df.append({'date':drug_date, 'drug':drug_str, 'value':1})
         ps_viewer_df = pd.DataFrame(ps_viewer_df)
 
         if len(ps_viewer_df)>0:
