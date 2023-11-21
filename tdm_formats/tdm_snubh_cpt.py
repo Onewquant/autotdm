@@ -874,7 +874,11 @@ class snubh_cpt_tdm(tdm):
         if type(echo_result) != str: pass
         elif echo_result == '': pass
         else:
-            echo_result_df = [(s.split('작성과: ')[-1].replace(' ', '').split(')\n')[0].split('(')[-1].replace('\n', '').replace('.', '-'),self.get_replaced_str_from_tups(target_str=s.split('Summary')[0],tups=[(' / ','/'),('\n',' '),(' .','.'),(' -','-'),(' %','%')]).strip()) for s in echo_result.split('Conclusions')[1:]]
+            # echo_result_df = [(s.split('작성과: ')[-1].replace(' ', '').split(')\n')[0].split('(')[-1].replace('\n', '').replace('.', '-'),self.get_replaced_str_from_tups(target_str=s.split('Summary')[0],tups=[(' / ','/'),('\n',' '),(' .','.'),(' -','-'),(' %','%')]).strip()) for s in echo_result.split('Conclusions')[1:]]
+            echo_result_df = {'date': [re.findall(r'[\d][\d][\d][\d]-[\d][\d]-[\d][\d]', self.get_replaced_str_from_tups(target_str=echo_result.split('Conclusions')[0], tups=[(' ',''), ('\n',''), ('\t','')]))[0],],
+                              'echo_result': [self.get_replaced_str_from_tups(target_str=echo_result.split('Conclusions')[1].split('Summary')[0], tups=[(' / ', '/'), ('\n', ' '), (' .', '.'), (' -', '-'), (' %', '%')]).strip()],}
+            # echo_result_df = [(re.findall(r'[\d][\d][\d][\d]-[\d][\d]-[\d][\d]', s.replace(' ', '').replace('\n', '').replace('\t', ''))[0], self.get_replaced_str_from_tups(target_str=s.split('Summary')[0], tups=[(' / ', '/'), ('\n', ' '), (' .', '.'), (' -', '-'), (' %', '%')]).strip() for s in echo_result.split('Conclusions')[1:]]]
+
             echo_result_df = pd.DataFrame(echo_result_df, columns=['date', 'echo_result']).sort_values(['date'], ascending=False)
         return echo_result_df
 

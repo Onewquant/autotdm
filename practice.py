@@ -52,3 +52,5 @@ ndf['AUC2'] = ndf['AUC (mg*h/L)_2point'].copy()
 ndf['AUC1'] = ndf['AUC (mg*h/L)_1point'].copy()
 ndf = ndf.drop(labels=['AUC (mg*h/L)_2point','AUC (mg*h/L)_1point'], axis=1)
 ndf.to_csv('D:/autotdm/two_departments_수정.csv', header=True, encoding='utf-8-sig', index=False)
+
+
