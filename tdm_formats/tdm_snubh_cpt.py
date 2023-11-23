@@ -504,6 +504,7 @@ class snubh_cpt_tdm(tdm):
                     self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
                 elif k == 'lab':
                     self.pt_dict[k] = self.get_parsed_lab_df(value=v)
+                    self.dli_viewer_analysis()
                 elif k == 'order':
                     self.pt_dict['order'] = self.parse_order_record(order_str=v)
                     self.ddi_viewer_analysis(included_prx_sig='/Y')
@@ -1004,6 +1005,36 @@ class snubh_cpt_tdm(tdm):
         for tup in tups:
             target_str=target_str.replace(tup[0], tup[1])
         return target_str
+
+    def dli_viewer_analysis(self):
+
+        # ps_viewer_df = list()
+        # for inx, row in st.session_state['order_df'].iterrows():
+        # for inx, row in self.pt_dict['lab'].iterrows():
+        #     if (included_prx_sig in row['Acting']) and len(re.findall(r'\([A-Za-z]*\)',row['처방지시']))>0:
+        #         drug_str = re.findall(r'\([A-Za-z]*\)',row['처방지시'])[0][1:-1]
+        #
+        #         pharmexam_list = re.findall(r'[\d][\d][\d][\d]-[\d][\d]-[\d][\d]', row['약국/검사']) + re.findall(r'[\d][\d][\d][\d]-[\d][\d]-[\d][\d]', row['Acting'])
+        #         if len(pharmexam_list) == 0:
+        #             drug_date = row['date']
+        #         else:
+        #             drug_date = max(pharmexam_list)
+        #
+        #         if drug_str in ('ASAP',):
+        #             continue
+        #         else:
+        #             ps_viewer_df.append({'date':drug_date, 'drug':drug_str, 'value':1})
+        # ps_viewer_df = pd.DataFrame(ps_viewer_df)
+
+        # if len(ps_viewer_df)>0:
+        #     st.session_state['dli_viewer'] = ps_viewer_df.pivot_table(index='drug', columns='date', values='value', aggfunc=np.nanmax).reset_index(drop=False)
+        # else:
+        #     st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
+
+        ps_viewer_df = self.pt_dict['lab']
+        st.session_state['dli_viewer'] = ps_viewer_df
+
+
 
     def ddi_viewer_analysis(self, included_prx_sig='/Y'):
 
