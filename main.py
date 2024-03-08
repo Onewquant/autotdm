@@ -72,10 +72,14 @@ else:
    elif (st.session_state['hospital'] == '분당서울대학교병원') and (st.session_state['tdm_division'] == '진단검사의학과'):
        st.session_state['tdm_inst'] = snubh_labmed_tdm()
        st.session_state['tdm_inst'].execution_flow()
+   elif (st.session_state['hospital'] == '분당서울대학교병원') and (st.session_state['tdm_division'] == '약제부'):
+       st.session_state['tdm_inst'] = snubh_labmed_tdm()
+       st.session_state['tdm_inst'].execution_flow()
+       st.write('Auto TDM 로직을 개발중입니다.')
    elif (st.session_state['hospital'] == '서울대학교병원') and (st.session_state['tdm_division'] == '임상약리학과'):
        st.session_state['tdm_inst'] = snuh_cpt_tdm()
        st.session_state['tdm_inst'].exection_flow()
-       st.write('TDM 로직을 개발중입니다.')
+       st.write('Auto TDM 로직을 개발중입니다.')
    else:
        pass
 
