@@ -70,7 +70,7 @@ else:
        st.session_state['tdm_inst'] = snubh_cpt_tdm()
        st.session_state['tdm_inst'].execution_flow()
    elif (st.session_state['hospital'] == '분당서울대학교병원') and (st.session_state['tdm_division'] == '진단검사의학과'):
-       st.session_state['tdm_inst'] = snubh_cpt_tdm()
+       st.session_state['tdm_inst'] = snubh_labmed_tdm()
        st.session_state['tdm_inst'].execution_flow()
    elif (st.session_state['hospital'] == '서울대학교병원') and (st.session_state['tdm_division'] == '임상약리학과'):
        st.session_state['tdm_inst'] = snuh_cpt_tdm()

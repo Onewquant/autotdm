@@ -283,7 +283,7 @@ def get_all_conomitant_drugs(order_str):
 def convert_df(df):
     return df.to_csv(index=False, encoding='utf-8-sig')
 
-class snubh_cpt_tdm(tdm):
+class snubh_labmed_tdm(tdm):
     def __init__(self):
         super().__init__()
         self.individual_vars()
