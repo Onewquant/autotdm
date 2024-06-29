@@ -498,16 +498,17 @@ class snubh_cpt_tdm(tdm):
 
     def execution_of_generating_first_evaluation(self):
         try:
-            for k in ('vs', 'lab', 'order'):
+            for k in ('lab', 'order', 'vs'):
                 v = st.session_state[k]
-                if k == 'vs':
-                    self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
-                elif k == 'lab':
+                if k == 'lab':
                     self.pt_dict[k] = self.get_parsed_lab_df(value=v)
                     self.dli_viewer_analysis()
                 elif k == 'order':
-                    self.pt_dict['order'] = self.parse_order_record(order_str=v)
+                    self.pt_dict[k] = self.parse_order_record(order_str=v)
                     self.ddi_viewer_analysis(included_prx_sig='/Y')
+                elif k == 'vs':
+                    self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
+                    self.dvi_viewer_analysis()
         except:
             st.error(f"{st.session_state['id']} / {st.session_state['name']} / DDI Evaluation / Generation Failed", icon=None)
 
@@ -1008,33 +1009,101 @@ class snubh_cpt_tdm(tdm):
 
     def dli_viewer_analysis(self):
 
-        # ps_viewer_df = list()
-        # for inx, row in st.session_state['order_df'].iterrows():
-        # for inx, row in self.pt_dict['lab'].iterrows():
-        #     if (included_prx_sig in row['Acting']) and len(re.findall(r'\([A-Za-z]*\)',row['처방지시']))>0:
-        #         drug_str = re.findall(r'\([A-Za-z]*\)',row['처방지시'])[0][1:-1]
-        #
-        #         pharmexam_list = re.findall(r'[\d][\d][\d][\d]-[\d][\d]-[\d][\d]', row['약국/검사']) + re.findall(r'[\d][\d][\d][\d]-[\d][\d]-[\d][\d]', row['Acting'])
-        #         if len(pharmexam_list) == 0:
-        #             drug_date = row['date']
-        #         else:
-        #             drug_date = max(pharmexam_list)
-        #
-        #         if drug_str in ('ASAP',):
-        #             continue
-        #         else:
-        #             ps_viewer_df.append({'date':drug_date, 'drug':drug_str, 'value':1})
-        # ps_viewer_df = pd.DataFrame(ps_viewer_df)
+        ps_viewer_df = self.pt_dict['lab'].copy()
 
-        # if len(ps_viewer_df)>0:
-        #     st.session_state['dli_viewer'] = ps_viewer_df.pivot_table(index='drug', columns='date', values='value', aggfunc=np.nanmax).reset_index(drop=False)
-        # else:
-        #     st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
+        unique_dates = sorted(ps_viewer_df['date'].unique())
 
-        ps_viewer_df = self.pt_dict['lab']
-        st.session_state['dli_viewer'] = ps_viewer_df
+        # Initialize a new DataFrame with the unique dates as columns
+        transformed_df = pd.DataFrame(columns=unique_dates)
+
+        # Iterate through each column except 'dt' and 'date'
+        for col in ps_viewer_df.columns:
+            if col not in ['dt', 'date']:
+                # Create a row with the column name
+                row_data = []
+                for date in unique_dates:
+                    # Extract the values for the current date and column
+                    values = ps_viewer_df[ps_viewer_df['date'] == date][col].dropna().astype(str).tolist()
+                    # Join multiple values with '/'
+                    joined_values = '/'.join(values)
+                    row_data.append(joined_values)
+                # Append the row to the transformed DataFrame
+                transformed_df.loc[col] = row_data
+
+        transformed_df = transformed_df.reset_index(drop=False)
+        transformed_df.rename(columns={'index': 'lab'}, inplace=True)
+
+        if len(transformed_df)>0:
+            st.session_state['dli_viewer'] = transformed_df
+            self.pt_dict['lab_date_min'], self.pt_dict['lab_date_max'] = min(transformed_df.drop(columns=['lab']).columns), max(transformed_df.drop(columns=['lab']).columns)
+        else:
+            st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value'])
+
+    def dvi_viewer_analysis(self, tdm_date=datetime.today().strftime('%Y-%m-%d')):
+
+        # import pandas as pd
+        # from datetime import datetime
+        # df = pd.read_csv('C:/Users/ilma0/Downloads/Lab dummy table - 시트3.csv')
+        # date_range = pd.date_range(end=tdm_date, periods=6)
+        # unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
+
+        df = self.pt_dict['vs']
+        try:
+            date_range = pd.date_range(start=self.pt_dict['lab_date_min'], end=self.pt_dict['lab_date_max'])
+            unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
+        except:
+            try:
+                date_range = pd.date_range(start=self.pt_dict['order_date_min'], end=self.pt_dict['order_date_max'])
+                unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
+            except:
+                date_range = pd.date_range(end=tdm_date, periods=5)
+                unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
+
+        # Calculate the number of rows for each date to minimize variance
+        num_dates = len(unique_dates)
+        num_rows = len(df)
+        rows_per_date = [num_rows // num_dates] * num_dates
+        for i in range(num_rows % num_dates):
+            rows_per_date[i] += 1
 
 
+        df['date']=''
+        # Create the transformed DataFrame
+        end_inx = 0
+        for d, n in dict(zip(unique_dates, rows_per_date)).items():
+            for cnt in range(n):
+                print(f'{end_inx+cnt} = {end_inx} + {cnt}')
+                df.at[end_inx+cnt,'date'] = d
+            end_inx += n
+
+            if end_inx==num_rows:break
+
+        transformed_df = pd.DataFrame(index=unique_dates)
+
+        for col in df.columns:
+            if col not in ['dt', 'date']:
+                col_data = []
+                start_idx = 0
+                for i, date in enumerate(unique_dates):
+                    end_idx = start_idx + rows_per_date[i]
+                    values = df[df['date'] == date][col].dropna().astype(str).tolist()
+                    joined_values = '/'.join(values)
+                    col_data.append(joined_values)
+                    start_idx = end_idx
+                transformed_df[col] = col_data
+
+        # Reset index to make 'date' a column
+        transformed_df.reset_index(inplace=True)
+        transformed_df.rename(columns={'index': 'date'}, inplace=True)
+        transformed_df = transformed_df.set_index(keys=['date'], drop=True)
+        result_df = transformed_df.T.reset_index(drop=False)
+        result_df.rename(columns={'index': 'vs'}, inplace=True)
+        # Display the transformed DataFrame
+
+        if len(transformed_df) > 0:
+            st.session_state['dvi_viewer'] = result_df
+        else:
+            st.session_state['dvi_viewer'] = pd.DataFrame(columns=['date', 'vs', 'value'])
 
     def ddi_viewer_analysis(self, included_prx_sig='/Y'):
 
@@ -1058,6 +1127,7 @@ class snubh_cpt_tdm(tdm):
 
         if len(ps_viewer_df)>0:
             st.session_state['ddi_viewer'] = ps_viewer_df.pivot_table(index='drug', columns='date', values='value', aggfunc=np.nanmax).reset_index(drop=False)
+            self.pt_dict['order_date_min'], self.pt_dict['order_date_max'] = min(st.session_state['ddi_viewer'].drop(columns=['drug']).columns), max(st.session_state['ddi_viewer'].drop(columns=['drug']).columns)
         else:
             st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
 
