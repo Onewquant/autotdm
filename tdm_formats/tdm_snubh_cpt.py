@@ -594,7 +594,7 @@ class snubh_cpt_tdm(tdm):
 
     def execution_of_generating_first_evaluation(self):
         try:
-            for k in ('lab', 'order', 'vs'):
+            for k in ('lab', 'order', 'vs', 'practime'):
                 v = st.session_state[k]
                 if k == 'lab':
                     self.pt_dict[k] = self.get_parsed_lab_df(value=v)
@@ -605,6 +605,9 @@ class snubh_cpt_tdm(tdm):
                 elif k == 'vs':
                     self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
                     self.dvi_viewer_analysis()
+                elif k == 'practime':
+                    self.pt_dict[k] = self.parse_practime_record(raw_practime=v)
+                    self.practime_viewer_analysis()
 
         except:
             st.error(f"{st.session_state['id']} / {st.session_state['name']} / DDI Evaluation / Generation Failed", icon=None)
@@ -741,7 +744,8 @@ class snubh_cpt_tdm(tdm):
                                                 },
                                         'DCS': {'vs': 'Vital Sign - (BT)',
                                                 'lab': 'Lab 검사결과',
-                                                'order': '전체오더'
+                                                'order': '전체오더',
+                                                'practime': '검사수행시간',
                                                 },
                                         }
 
@@ -1103,6 +1107,9 @@ class snubh_cpt_tdm(tdm):
         for tup in tups:
             target_str=target_str.replace(tup[0], tup[1])
         return target_str
+
+    def practime_viewer_analysis(self):
+        st.session_state['practime_viewer'] = self.pt_dict['practime']
 
     def dli_viewer_analysis(self):
 
@@ -1911,6 +1918,10 @@ class snubh_cpt_tdm(tdm):
 
         # dodf = dodf[dodf.index.isin(list(inx_list))].reset_index(drop=True)
         return self.pt_dict['concomitant_medi']
+
+    def parse_practime_record(self, raw_practime):
+        self.practime_df = raw_practime
+        return self.practime_df
 
     def parse_vs_record(self, raw_vs):
         # self.raw_vs_str = raw_vs
@@ -3013,7 +3024,9 @@ class snubh_cpt_tdm(tdm):
                 self.get_parsed_lab_df(value)
 
                 return True, self.ldf
-
+        elif key == 'practime':
+            value = self.parse_practime_record(raw_practime=value)
+            return True, value
         elif key == 'order':
             ## raw data 저장
             input_record_filepath = f"{self.inputrecord_dir}/{self.input_record_dirname}/{key}_{self.pt_dict['name']}.txt"
