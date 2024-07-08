@@ -523,6 +523,7 @@ class snubh_cpt_tdm(tdm):
         st.session_state['tdm_research_viewer'] = pd.DataFrame(columns=['date', 'var', 'value']) if 'tdm_research_viewer' not in st.session_state else st.session_state['tdm_research_viewer']
         st.session_state['drug_consultation_viewer'] = pd.DataFrame(columns=['date', 'var', 'var_dates']) if 'drug_consultation_viewer' not in st.session_state else st.session_state['drug_consultation_viewer']
 
+        print(st.session_state['dli_viewer'])
         # try:
         for k in ('lab', 'order', 'vs', 'practime'):
             v = st.session_state[k] if k in st.session_state else ''
