@@ -400,6 +400,12 @@ class snubh_cpt_tdm(tdm):
             self.pt_dict['tdm_date'] = self.tdm_date
             self.pt_dict['drug'] = self.short_drugname_dict[st.session_state['drug']]
 
+            st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value']) if 'ddi_viewer' not in st.session_state else st.session_state['ddi_viewer']
+            st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value']) if 'dli_viewer' not in st.session_state else st.session_state['dli_viewer']
+            st.session_state['dvi_viewer'] = pd.DataFrame(columns=['date', 'vs', 'value']) if 'dvi_viewer' not in st.session_state else st.session_state['dvi_viewer']
+            st.session_state['tdm_research_viewer'] = pd.DataFrame(columns=['date', 'var', 'value']) if 'tdm_research_viewer' not in st.session_state else st.session_state['tdm_research_viewer']
+            st.session_state['drug_consultation_viewer'] = pd.DataFrame(columns=['date', 'var', 'var_dates']) if 'drug_consultation_viewer' not in st.session_state else st.session_state['drug_consultation_viewer']
+
             with self.rcol1:
 
                 st.write(f"<Ref> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
@@ -468,21 +474,13 @@ class snubh_cpt_tdm(tdm):
                         st.button('Reflect IR', on_click=self.reflecting_ir_text, key='reflect_ir')
 
             if st.session_state['drug'] == 'Drug Consulting':
+
+
                 with self.rcol2:
                     # self.rcol3, self.rcol4 = st.columns([1, 2], gap="medium")
 
                     # with self.rcol3:
                     st.write(f"<Drug Consultaion Viewer>")
-                    if 'ddi_viewer' not in st.session_state:
-                        st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
-                    if 'dli_viewer' not in st.session_state:
-                        st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value'])
-                    if 'dvi_viewer' not in st.session_state:
-                        st.session_state['dvi_viewer'] = pd.DataFrame(columns=['date', 'vs', 'value'])
-                    if 'tdm_research_viewer' not in st.session_state:
-                        st.session_state['tdm_research_viewer'] = pd.DataFrame(columns=['date', 'var', 'value'])
-                    if 'drug_consultation_viewer' not in st.session_state:
-                        st.session_state['drug_consultation_viewer'] = pd.DataFrame(columns=['date', 'var', 'var_dates'])
 
                     st.dataframe(st.session_state['drug_consultation_viewer'])
 
@@ -491,9 +489,9 @@ class snubh_cpt_tdm(tdm):
                     with self.rcol3:
                         st.button('Reflect', on_click=self.execution_of_generating_first_evaluation(), key='Reflection belows')
                     with self.rcol4:
-                        st.download_button(label='Drug consult', data=st.session_state['drug_consultation_viewer'].to_csv(index=False).encode('utf-8-sig'), file_name=f"test_consult.csv", key='rec_for_drug_consultation')
+                        st.download_button(label='Drug consult', data=st.session_state['drug_consultation_viewer'].to_csv(index=False).encode('utf-8-sig'), file_name=f"DrugConsult_{st.session_state['id']}_{st.session_state['name']}.csv", key='rec_for_drug_consultation')
                     with self.rcol5:
-                        st.download_button(label='TDM research', data=st.session_state['tdm_research_viewer'].to_csv(index=False).encode('utf-8-sig'), file_name=f"test_consult.csv", key='rec_for_tdm_research')
+                        st.download_button(label='TDM research', data=st.session_state['tdm_research_viewer'].to_csv(index=False).encode('utf-8-sig'), file_name=f"TDMResearch_{st.session_state['id']}_{st.session_state['name']}.csv", key='rec_for_tdm_research')
 
                     st.divider()
 
@@ -518,6 +516,13 @@ class snubh_cpt_tdm(tdm):
 
 
     def execution_of_generating_first_evaluation(self):
+
+        st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value']) if 'ddi_viewer' not in st.session_state else st.session_state['ddi_viewer']
+        st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value']) if 'dli_viewer' not in st.session_state else st.session_state['dli_viewer']
+        st.session_state['dvi_viewer'] = pd.DataFrame(columns=['date', 'vs', 'value']) if 'dvi_viewer' not in st.session_state else st.session_state['dvi_viewer']
+        st.session_state['tdm_research_viewer'] = pd.DataFrame(columns=['date', 'var', 'value']) if 'tdm_research_viewer' not in st.session_state else st.session_state['tdm_research_viewer']
+        st.session_state['drug_consultation_viewer'] = pd.DataFrame(columns=['date', 'var', 'var_dates']) if 'drug_consultation_viewer' not in st.session_state else st.session_state['drug_consultation_viewer']
+
         # try:
         for k in ('lab', 'order', 'vs', 'practime'):
             v = st.session_state[k] if k in st.session_state else ''
@@ -603,7 +608,7 @@ class snubh_cpt_tdm(tdm):
         # 컬럼 정리
 
         prefix_list = ['hospital', 'tdm_division', 'tdm_writer', 'id', 'name', 'sex', 'age', 'height', 'weight', 'tdm_date']
-        # middle_list = list(for_tdmresearch_df.columns)
+        middle_list = list(for_tdmresearch_df.columns)
         appendix_dict = {'Vd': vd_val, 'CL': cl_val, 'Est_Peak': est_peak_val, 'Est_Trough': est_trough_val,
                          'Mdf_Peak': mdf_peak_val, 'Mdf_Trough': mdf_trough_val,
                          'Interpretation': interpretation,'Hx':history,'Adm':cur_administartion, 'ETC': etc}
@@ -612,7 +617,7 @@ class snubh_cpt_tdm(tdm):
         for tdmdb_key, tdmdb_val in appendix_dict.items():
             for_tdmresearch_df[tdmdb_key] = tdmdb_val
 
-        st.session_state['tdm_research_viewer'] = for_tdmresearch_df
+        st.session_state['tdm_research_viewer'] = for_tdmresearch_df[prefix_list+middle_list+list(appendix_dict.keys())]
 
         ## For Drug Consultation
 
@@ -632,7 +637,7 @@ class snubh_cpt_tdm(tdm):
         for col_tdmdb in prefix_list:
             for_drugconsult_df[col_tdmdb] = st.session_state[col_tdmdb]
 
-        st.session_state['drug_consultation_viewer'] = for_drugconsult_df
+        st.session_state['drug_consultation_viewer'] = for_drugconsult_df[prefix_list+middle_list]
         # except:
         #     st.error(f"{st.session_state['id']} / {st.session_state['name']} / DDI Evaluation / Generation Failed", icon=None)
 
