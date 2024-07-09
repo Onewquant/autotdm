@@ -407,8 +407,10 @@ class snubh_cpt_tdm(tdm):
             st.session_state['drug_consultation_viewer'] = pd.DataFrame(columns=['date', 'var', 'var_dates']) if 'drug_consultation_viewer' not in st.session_state else st.session_state['drug_consultation_viewer']
 
             with self.rcol1:
-
-                st.write(f"<Ref> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
+                if st.session_state['drug'] == 'Drug Consulting':
+                    st.selectbox('Aggregation Method', options=['All','First','Min','Median','Mean','Max','Last'], key='aggregation_method')
+                else:
+                    st.write(f"<Ref> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
 
                 additional_inputs = self.additional_pt_term_dict[self.short_drugname_dict[st.session_state['drug']]]
                 # if len(additional_inputs)==0: pass
@@ -709,6 +711,8 @@ class snubh_cpt_tdm(tdm):
         st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value'])
         st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value'])
         st.session_state['dvi_viewer'] = pd.DataFrame(columns=['date', 'vs', 'value'])
+        st.session_state['tdm_research_viewer'] = pd.DataFrame(columns=['date', 'var', 'value'])
+        st.session_state['drug_consultation_viewer'] = pd.DataFrame(columns=['date', 'var', 'var_dates'])
 
     def individual_vars(self):
         self.prev_date = ''
