@@ -475,11 +475,8 @@ class snubh_cpt_tdm(tdm):
 
             if st.session_state['drug'] == 'Drug Consulting':
 
-
                 with self.rcol2:
-                    # self.rcol3, self.rcol4 = st.columns([1, 2], gap="medium")
 
-                    # with self.rcol3:
                     st.write(f"<Drug Consultaion Viewer>")
 
                     st.dataframe(st.session_state['drug_consultation_viewer'])
@@ -487,11 +484,12 @@ class snubh_cpt_tdm(tdm):
                     self.rcol3, self.rcol4, self.rcol5 = st.columns([1, 2, 3], gap="medium")
 
                     with self.rcol3:
-                        st.button('Reflect', on_click=self.execution_of_generating_first_evaluation(), key='Reflection belows')
+                        st.button('Reflect', on_click=self.execution_of_generating_first_evaluation, key='Reflection belows')
                     with self.rcol4:
-                        st.download_button(label='Drug consult', data=st.session_state['drug_consultation_viewer'].to_csv(index=False).encode('utf-8-sig'), file_name=f"DrugConsult_{st.session_state['id']}_{st.session_state['name']}.csv", key='rec_for_drug_consultation')
+                        st.download_button(label='Drug consult', data=st.session_state['drug_consultation_viewer'].to_csv(index=False).encode('utf-8-sig'), file_name=f"DrugConsult_({st.session_state['id']}_{st.session_state['name']}_{st.session_state['tdm_date']}).csv", key='rec_for_drug_consultation')
                     with self.rcol5:
-                        st.download_button(label='TDM research', data=st.session_state['tdm_research_viewer'].to_csv(index=False).encode('utf-8-sig'), file_name=f"TDMResearch_{st.session_state['id']}_{st.session_state['name']}.csv", key='rec_for_tdm_research')
+                        st.download_button(label='TDM research', data=st.session_state['tdm_research_viewer'].to_csv(index=False).encode('utf-8-sig'), file_name=f"TDMResearch_({st.session_state['id']}_{st.session_state['name']}_{st.session_state['tdm_date']}).csv", key='rec_for_tdm_research')
+
 
                     st.divider()
 
@@ -514,133 +512,131 @@ class snubh_cpt_tdm(tdm):
 
 
 
-
     def execution_of_generating_first_evaluation(self):
 
-        st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value']) if 'ddi_viewer' not in st.session_state else st.session_state['ddi_viewer']
-        st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value']) if 'dli_viewer' not in st.session_state else st.session_state['dli_viewer']
-        st.session_state['dvi_viewer'] = pd.DataFrame(columns=['date', 'vs', 'value']) if 'dvi_viewer' not in st.session_state else st.session_state['dvi_viewer']
-        st.session_state['tdm_research_viewer'] = pd.DataFrame(columns=['date', 'var', 'value']) if 'tdm_research_viewer' not in st.session_state else st.session_state['tdm_research_viewer']
-        st.session_state['drug_consultation_viewer'] = pd.DataFrame(columns=['date', 'var', 'var_dates']) if 'drug_consultation_viewer' not in st.session_state else st.session_state['drug_consultation_viewer']
+        # st.session_state['ddi_viewer'] = pd.DataFrame(columns=['date', 'drug', 'value']) if 'ddi_viewer' not in st.session_state else st.session_state['ddi_viewer']
+        # st.session_state['dli_viewer'] = pd.DataFrame(columns=['date', 'lab', 'value']) if 'dli_viewer' not in st.session_state else st.session_state['dli_viewer']
+        # st.session_state['dvi_viewer'] = pd.DataFrame(columns=['date', 'vs', 'value']) if 'dvi_viewer' not in st.session_state else st.session_state['dvi_viewer']
+        # st.session_state['tdm_research_viewer'] = pd.DataFrame(columns=['date', 'var', 'value']) if 'tdm_research_viewer' not in st.session_state else st.session_state['tdm_research_viewer']
+        # st.session_state['drug_consultation_viewer'] = pd.DataFrame(columns=['date', 'var', 'var_dates']) if 'drug_consultation_viewer' not in st.session_state else st.session_state['drug_consultation_viewer']
 
-        # print(st.session_state['dli_viewer'])
-        # try:
-        for k in ('lab', 'order', 'vs', 'practime'):
-            v = st.session_state[k] if k in st.session_state else ''
-            if k == 'lab':
-                self.pt_dict[k] = self.get_parsed_lab_df(value=v)
-                self.dli_viewer_analysis()
-            elif k == 'order':
-                self.pt_dict[k] = self.parse_order_record(order_str=v)
-                self.ddi_viewer_analysis(included_prx_sig='/Y')
-            elif k == 'vs':
-                self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
-                self.dvi_viewer_analysis()
-            elif k == 'practime':
-                self.pt_dict[k] = self.parse_practime_record(raw_practime=v)
-                self.practime_viewer_analysis()
+        try:
+            for k in ('lab', 'order', 'vs', 'practime'):
+                v = st.session_state[k] if k in st.session_state else ''
+                if k == 'lab':
+                    self.pt_dict[k] = self.get_parsed_lab_df(value=v)
+                    self.dli_viewer_analysis()
+                elif k == 'order':
+                    self.pt_dict[k] = self.parse_order_record(order_str=v)
+                    self.ddi_viewer_analysis(included_prx_sig='/Y')
+                elif k == 'vs':
+                    self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
+                    self.dvi_viewer_analysis()
+                elif k == 'practime':
+                    self.pt_dict[k] = self.parse_practime_record(raw_practime=v)
+                    self.practime_viewer_analysis()
 
-        # 테이블 합성 (Columns : type, var, 날짜들)
+            # 테이블 합성 (Columns : type, var, 날짜들)
 
-        result_date_cols = list()
-        result_list, append_lab_date_cols, append_vs_date_cols, append_drug_date_cols = list(), list(), list(), list()
-        if len(st.session_state['dli_viewer']) != 0:
-            append_lab_df = st.session_state['dli_viewer'].copy()
-            # append_lab_df = st.session_state['dli_viewer'].reset_index(drop=False)
-            append_lab_date_cols = list(append_lab_df.drop(columns=['lab']).columns)
-            append_lab_df.rename(columns={'lab': 'var'}, inplace=True)
-            append_lab_df['type'] = 'lab'
-            result_list.append(append_lab_df)
-            result_date_cols += append_lab_date_cols
-        if len(st.session_state['dvi_viewer']) != 0:
-            append_vs_df = st.session_state['dvi_viewer'].copy()
-            # append_vs_df = st.session_state['dvi_viewer'].reset_index(drop=False)
-            append_vs_date_cols = list(append_vs_df.drop(columns=['vs']).columns)
-            append_vs_df.rename(columns={'vs': 'var'}, inplace=True)
-            append_vs_df['type'] = 'vs'
-            result_list.append(append_vs_df)
-            result_date_cols += append_vs_date_cols
-        if len(st.session_state['ddi_viewer']) != 0:
-            append_drug_df = st.session_state['ddi_viewer'].copy()
-            # append_drug_df = st.session_state['ddi_viewer'].reset_index(drop=False)
-            append_drug_date_cols = list(append_drug_df.drop(columns=['drug']).columns)
-            append_drug_df.rename(columns={'drug': 'var'}, inplace=True)
-            append_drug_df['type'] = 'drug'
-            result_list.append(append_drug_df)
-            result_date_cols += append_drug_date_cols
+            result_date_cols = list()
+            result_list, append_lab_date_cols, append_vs_date_cols, append_drug_date_cols = list(), list(), list(), list()
+            if len(st.session_state['dli_viewer']) != 0:
+                append_lab_df = st.session_state['dli_viewer'].copy()
+                # append_lab_df = st.session_state['dli_viewer'].reset_index(drop=False)
+                append_lab_date_cols = list(append_lab_df.drop(columns=['lab']).columns)
+                append_lab_df.rename(columns={'lab': 'var'}, inplace=True)
+                append_lab_df['type'] = 'lab'
+                result_list.append(append_lab_df)
+                result_date_cols += append_lab_date_cols
+            if len(st.session_state['dvi_viewer']) != 0:
+                append_vs_df = st.session_state['dvi_viewer'].copy()
+                # append_vs_df = st.session_state['dvi_viewer'].reset_index(drop=False)
+                append_vs_date_cols = list(append_vs_df.drop(columns=['vs']).columns)
+                append_vs_df.rename(columns={'vs': 'var'}, inplace=True)
+                append_vs_df['type'] = 'vs'
+                result_list.append(append_vs_df)
+                result_date_cols += append_vs_date_cols
+            if len(st.session_state['ddi_viewer']) != 0:
+                append_drug_df = st.session_state['ddi_viewer'].copy()
+                # append_drug_df = st.session_state['ddi_viewer'].reset_index(drop=False)
+                append_drug_date_cols = list(append_drug_df.drop(columns=['drug']).columns)
+                append_drug_df.rename(columns={'drug': 'var'}, inplace=True)
+                append_drug_df['type'] = 'drug'
+                result_list.append(append_drug_df)
+                result_date_cols += append_drug_date_cols
 
-        result_date_cols = list(set(result_date_cols))
-        result_date_cols.sort()
+            result_date_cols = list(set(result_date_cols))
+            result_date_cols.sort()
 
-        ## For TDM RESEARCH
+            ## For TDM RESEARCH
 
-        # lab, vs, order 넣은 게 없으면, 기본정보들만 추출
-        if len(result_list) == 0:
-            for_tdmresearch_df = pd.DataFrame({'type': ['', ], 'var': ['', ], 'var_date': ['', ], 'var_value': [np.nan, ]})
+            # lab, vs, order 넣은 게 없으면, 기본정보들만 추출
+            if len(result_list) == 0:
+                for_tdmresearch_df = pd.DataFrame({'type': ['', ], 'var': ['', ], 'var_date': ['', ], 'var_value': [np.nan, ]})
 
-        # lab, vs, order 넣은 게 있으면, 이 데이터들을 long form으로 저장
-        else:
-            if len(result_list) == 1:
-                for_tdmresearch_df = result_list[0]
+            # lab, vs, order 넣은 게 있으면, 이 데이터들을 long form으로 저장
             else:
-                for_tdmresearch_df = pd.concat(
-                    [df.reindex(columns=['type', 'var'] + result_date_cols) for df in result_list],
-                    ignore_index=True)
-            for_tdmresearch_df = for_tdmresearch_df[['type', 'var']+result_date_cols]
-            for_tdmresearch_df = pd.melt(for_tdmresearch_df, id_vars=['type', 'var'], var_name='var_date', value_name='var_value')
+                if len(result_list) == 1:
+                    for_tdmresearch_df = result_list[0]
+                else:
+                    for_tdmresearch_df = pd.concat(
+                        [df.reindex(columns=['type', 'var'] + result_date_cols) for df in result_list],
+                        ignore_index=True)
+                for_tdmresearch_df = for_tdmresearch_df[['type', 'var']+result_date_cols]
+                for_tdmresearch_df = pd.melt(for_tdmresearch_df, id_vars=['type', 'var'], var_name='var_date', value_name='var_value')
 
-        # 이외 하위 appendix 정보들입력
+            # 이외 하위 appendix 정보들입력
 
-        round_num = 3
+            round_num = 3
 
-        history = st.session_state['Hx'] if 'Hx' in st.session_state else ''
-        cur_administartion = st.session_state['Adm'] if 'Adm' in st.session_state else ''
+            history = st.session_state['Hx'] if 'Hx' in st.session_state else ''
+            cur_administartion = st.session_state['Adm'] if 'Adm' in st.session_state else ''
 
-        vd_val = float(round(st.session_state['Vd'], round_num)) if 'Vd' in st.session_state else 0
-        cl_val = float(round(st.session_state['CL'], round_num)) if 'CL' in st.session_state else 0
-        est_peak_val = float(round(st.session_state['Est_Peak'], round_num)) if 'Est_Peak' in st.session_state else 0
-        est_trough_val = float(round(st.session_state['Est_Trough'], round_num)) if 'Est_Trough' in st.session_state else 0
-        mdf_peak_val = float(round(st.session_state['Mdf_Peak'], round_num)) if 'Mdf_Peak' in st.session_state else 0
-        mdf_trough_val = float(round(st.session_state['Mdf_Trough'], round_num)) if 'Mdf_Trough' in st.session_state else 0
+            vd_val = float(round(st.session_state['Vd'], round_num)) if 'Vd' in st.session_state else 0
+            cl_val = float(round(st.session_state['CL'], round_num)) if 'CL' in st.session_state else 0
+            est_peak_val = float(round(st.session_state['Est_Peak'], round_num)) if 'Est_Peak' in st.session_state else 0
+            est_trough_val = float(round(st.session_state['Est_Trough'], round_num)) if 'Est_Trough' in st.session_state else 0
+            mdf_peak_val = float(round(st.session_state['Mdf_Peak'], round_num)) if 'Mdf_Peak' in st.session_state else 0
+            mdf_trough_val = float(round(st.session_state['Mdf_Trough'], round_num)) if 'Mdf_Trough' in st.session_state else 0
 
-        interpretation = st.session_state['Interpretation'] if 'Interpretation' in st.session_state else 0
-        etc = st.session_state['ETC'] if 'ETC' in st.session_state else 0
+            interpretation = st.session_state['Interpretation'] if 'Interpretation' in st.session_state else 0
+            etc = st.session_state['ETC'] if 'ETC' in st.session_state else 0
 
-        # 컬럼 정리
+            # 컬럼 정리
 
-        prefix_list = ['hospital', 'tdm_division', 'tdm_writer', 'id', 'name', 'sex', 'age', 'height', 'weight', 'tdm_date']
-        middle_list = list(for_tdmresearch_df.columns)
-        appendix_dict = {'Vd': vd_val, 'CL': cl_val, 'Est_Peak': est_peak_val, 'Est_Trough': est_trough_val,
-                         'Mdf_Peak': mdf_peak_val, 'Mdf_Trough': mdf_trough_val,
-                         'Interpretation': interpretation,'Hx':history,'Adm':cur_administartion, 'ETC': etc}
-        for col_tdmdb in prefix_list:
-            for_tdmresearch_df[col_tdmdb] = st.session_state[col_tdmdb]
-        for tdmdb_key, tdmdb_val in appendix_dict.items():
-            for_tdmresearch_df[tdmdb_key] = tdmdb_val
+            prefix_list = ['hospital', 'tdm_division', 'tdm_writer', 'id', 'name', 'sex', 'age', 'height', 'weight', 'tdm_date']
+            middle_list = list(for_tdmresearch_df.columns)
+            appendix_dict = {'Vd': vd_val, 'CL': cl_val, 'Est_Peak': est_peak_val, 'Est_Trough': est_trough_val,
+                             'Mdf_Peak': mdf_peak_val, 'Mdf_Trough': mdf_trough_val,
+                             'Interpretation': interpretation,'Hx':history,'Adm':cur_administartion, 'ETC': etc}
+            for col_tdmdb in prefix_list:
+                for_tdmresearch_df[col_tdmdb] = st.session_state[col_tdmdb]
+            for tdmdb_key, tdmdb_val in appendix_dict.items():
+                for_tdmresearch_df[tdmdb_key] = tdmdb_val
 
-        st.session_state['tdm_research_viewer'] = for_tdmresearch_df[prefix_list+middle_list+list(appendix_dict.keys())]
+            st.session_state['tdm_research_viewer'] = for_tdmresearch_df[prefix_list+middle_list+list(appendix_dict.keys())]
 
-        ## For Drug Consultation
+            ## For Drug Consultation
 
-        if len(result_list) == 0:
-            for_drugconsult_df = pd.DataFrame({'type': ['', ], 'var': ['', ], 'var_dates': ['', ], })
-        else:
-            if len(result_list) == 1:
-                for_drugconsult_df = result_list[0]
+            if len(result_list) == 0:
+                for_drugconsult_df = pd.DataFrame({'type': ['', ], 'var': ['', ], 'var_dates': ['', ], })
             else:
-                for_drugconsult_df = pd.concat(
-                    [df.reindex(columns=['type', 'var'] + result_date_cols) for df in result_list],
-                    ignore_index=True)
-            for_drugconsult_df = for_drugconsult_df[['type', 'var'] + result_date_cols]
+                if len(result_list) == 1:
+                    for_drugconsult_df = result_list[0]
+                else:
+                    for_drugconsult_df = pd.concat(
+                        [df.reindex(columns=['type', 'var'] + result_date_cols) for df in result_list],
+                        ignore_index=True)
+                for_drugconsult_df = for_drugconsult_df[['type', 'var'] + result_date_cols]
 
-        prefix_list = ['id', 'name', 'sex', 'age', 'tdm_date']
-        middle_list = ['type', 'var'] + result_date_cols
-        for col_tdmdb in prefix_list:
-            for_drugconsult_df[col_tdmdb] = st.session_state[col_tdmdb]
+            prefix_list = ['id', 'name', 'sex', 'age', 'tdm_date']
+            middle_list = ['type', 'var'] + result_date_cols
+            for col_tdmdb in prefix_list:
+                for_drugconsult_df[col_tdmdb] = st.session_state[col_tdmdb]
 
-        st.session_state['drug_consultation_viewer'] = for_drugconsult_df[prefix_list+middle_list]
-        # except:
-        #     st.error(f"{st.session_state['id']} / {st.session_state['name']} / DDI Evaluation / Generation Failed", icon=None)
+            st.session_state['drug_consultation_viewer'] = for_drugconsult_df[prefix_list+middle_list]
+        except:
+            st.error(f"{st.session_state['id']} / {st.session_state['name']} / Drug Consultation / Generation Failed", icon=None)
 
     def execution_of_generating_first_draft(self):
         # self.tdm_writer = st.session_state['tdm_writer']
