@@ -409,6 +409,11 @@ class snubh_cpt_tdm(tdm):
             with self.rcol1:
                 if st.session_state['drug'] == 'Drug Consulting':
                     st.selectbox('Aggregation Method', options=['All','First','Min','Median','Mean','Max','Last'], key='aggregation_method')
+                    self.rcol3, self.rcol4 = st.columns([1, 2], gap="medium")
+                    with self.rcol3:
+                        st.date_input('VS Start', st.session_state['tdm_date'],key='vs_start_date')
+                    with self.rcol4:
+                        st.date_input('VS End', st.session_state['tdm_date'], key='vs_end_date')
                 else:
                     st.write(f"<Ref> {st.session_state['id']} / {st.session_state['name']} / {st.session_state['drug']} TDM")
 
@@ -533,7 +538,7 @@ class snubh_cpt_tdm(tdm):
                     self.ddi_viewer_analysis(included_prx_sig='/Y')
                 elif k == 'vs':
                     self.pt_dict[k] = self.parse_vs_record(raw_vs=v)
-                    self.dvi_viewer_analysis()
+                    self.dvi_viewer_analysis(tdm_date=st.session_state['tdm_date'])
                 elif k == 'practime':
                     self.pt_dict[k] = self.parse_practime_record(raw_practime=v)
                     self.practime_viewer_analysis()
@@ -1182,16 +1187,18 @@ class snubh_cpt_tdm(tdm):
         # unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
 
         df = self.pt_dict['vs']
-        try:
-            date_range = pd.date_range(start=self.pt_dict['lab_date_min'], end=self.pt_dict['lab_date_max'])
-            unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
-        except:
-            try:
-                date_range = pd.date_range(start=self.pt_dict['order_date_min'], end=self.pt_dict['order_date_max'])
-                unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
-            except:
-                date_range = pd.date_range(end=tdm_date, periods=5)
-                unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
+        # try:
+        #     date_range = pd.date_range(start=self.pt_dict['lab_date_min'], end=self.pt_dict['lab_date_max'])
+        #     unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
+        # except:
+        #     try:
+        #         date_range = pd.date_range(start=self.pt_dict['order_date_min'], end=self.pt_dict['order_date_max'])
+        #         unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
+        #     except:
+        #         date_range = pd.date_range(end=tdm_date, periods=5)
+        #         unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
+        date_range = pd.date_range(start=st.session_state['vs_start_date'], end=st.session_state['vs_end_date'])
+        unique_dates = sorted(date_range.strftime('%Y-%m-%d').tolist())
 
         # Calculate the number of rows for each date to minimize variance
         num_dates = len(unique_dates)
