@@ -1149,6 +1149,7 @@ class snubh_cpt_tdm(tdm):
     def dli_viewer_analysis(self):
 
         ps_viewer_df = self.pt_dict['lab'].copy()
+        # print(ps_viewer_df)
 
         unique_dates = sorted(ps_viewer_df['date'].unique())
 
@@ -1162,7 +1163,7 @@ class snubh_cpt_tdm(tdm):
                 row_data = []
                 for date in unique_dates:
                     # Extract the values for the current date and column
-                    values = ps_viewer_df[ps_viewer_df['date'] == date][col].dropna().astype(str).tolist()
+                    values = ps_viewer_df[ps_viewer_df['date'] == date][col].dropna().astype(str).map(lambda x:re.sub(r'(\d+)\s*-\s*(\d+)',r'\1 ~ \2',x)).tolist()
                     # Join multiple values with '/'
                     joined_values = '_'.join(values)
                     row_data.append(joined_values)
