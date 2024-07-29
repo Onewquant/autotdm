@@ -852,11 +852,10 @@ class snubh_cpt_tdm(tdm):
         self.raw_lab_input = 'N'
 
     def get_parsed_lab_df(self, value):
-        # value=''
-        # value=input()
-        # import pandas as pd
-        raw_ldf_cols = ['보고일', '오더일', '검사명', '검사결과', '직전결과', '참고치', '결과비고', '오더비고']
-        raw_ldf = pd.DataFrame([tbl_row.split('\t') for tbl_row in value.split('\n') if tbl_row!=''])
+
+        raw_ldf_cols = ['보고일', '오더일', '검사명', '검사결과', '직전결과']
+
+        raw_ldf = pd.DataFrame([tbl_row.split('\t') for tbl_row in value.split('\n') if tbl_row != ''])
         cur_rldf_cols = list(raw_ldf.columns)
         vld_rldf_cols = list()
         for i in range(len(cur_rldf_cols)):
@@ -866,20 +865,46 @@ class snubh_cpt_tdm(tdm):
                 vld_rldf_cols.append(raw_ldf_cols[i])
 
         raw_ldf.columns = vld_rldf_cols
-        if (len(raw_ldf.columns)==1) or (len(raw_ldf)<=1):
-            self.ldf = pd.DataFrame(columns=['date','dt'])
+        if (len(raw_ldf.columns) == 1) or (len(raw_ldf) <= 1):
+            self.ldf = pd.DataFrame(columns=['date', 'dt'])
             return self.ldf
-        # self.ldf[~self.ldf['Creatinine'].isna()]
-
 
         for inx, rrow in raw_ldf.iterrows():
-            if (rrow['검사명'] == 'WBC') and ('HPF' in rrow['참고치']):
+            if (rrow['검사명'] == 'WBC') and (type(rrow['검사결과'])==str):
                 raw_ldf.at[inx, '검사명'] = 'u.WBC'
-            elif (rrow['검사명'] == 'WBC') and ('mm³' in rrow['참고치']):
+            elif (rrow['검사명'] == 'WBC') and (rrow['검사결과'] >= 50):
                 raw_ldf.at[inx, '검사명'] = 'em.WBC'
-            elif (rrow['검사명'] == 'RBC') and ('HPF' in rrow['참고치']):
+            elif (rrow['검사명'] == 'RBC') and (type(rrow['검사결과'])==str):
                 raw_ldf.at[inx, '검사명'] = 'u.RBC'
 
+        ########################### 여기여기 - 위의 내용 지우고 8/8 EMR 팀 수정후 다시 복원 ###############################
+
+        # raw_ldf_cols = ['보고일', '오더일', '검사명', '검사결과', '직전결과', '참고치', '결과비고', '오더비고']
+        #
+        # raw_ldf = pd.DataFrame([tbl_row.split('\t') for tbl_row in value.split('\n') if tbl_row!=''])
+        # cur_rldf_cols = list(raw_ldf.columns)
+        # vld_rldf_cols = list()
+        # for i in range(len(cur_rldf_cols)):
+        #     if i + 1 > len(cur_rldf_cols):
+        #         vld_rldf_cols.append(str(i))
+        #     else:
+        #         vld_rldf_cols.append(raw_ldf_cols[i])
+        #
+        # raw_ldf.columns = vld_rldf_cols
+        # if (len(raw_ldf.columns)==1) or (len(raw_ldf)<=1):
+        #     self.ldf = pd.DataFrame(columns=['date','dt'])
+        #     return self.ldf
+        #
+        # for inx, rrow in raw_ldf.iterrows():
+        #     if (rrow['검사명'] == 'WBC') and ('HPF' in rrow['참고치']):
+        #         raw_ldf.at[inx, '검사명'] = 'u.WBC'
+        #     elif (rrow['검사명'] == 'WBC') and ('mm³' in rrow['참고치']):
+        #         raw_ldf.at[inx, '검사명'] = 'em.WBC'
+        #     elif (rrow['검사명'] == 'RBC') and ('HPF' in rrow['참고치']):
+        #         raw_ldf.at[inx, '검사명'] = 'u.RBC'
+
+
+        ##########################################################
 
         # raw_ldf['검사명'].unique()
         # raw_ldf['date'] =
