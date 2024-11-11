@@ -1620,8 +1620,8 @@ class snubh_cpt_tdm(tdm):
 
 
                 non_null_frag['나이'] = self.pt_dict['age']
-                # if (len(non_null_frag) == 0) or ((lab_key not in ['BUN/Cr', 'GFR']) & (self.labrescount_dict[lab_key] > 4)) or ((lab_key in ['BUN/Cr', 'GFR']) & (self.labrescount_dict[lab_key] > 13)):
-                if (len(non_null_frag) == 0) or (self.labrescount_dict[lab_key] > 4):
+                if (len(non_null_frag) == 0) or ((lab_key not in ['BUN/Cr', 'GFR']) & (self.labrescount_dict[lab_key] > 4)) or ((lab_key in ['BUN/Cr', 'GFR']) & (self.labrescount_dict[lab_key] > 13)):
+                # if (len(non_null_frag) == 0) or (self.labrescount_dict[lab_key] > 4):
                     pass
                 else:
                     addtext = parse_daily_notnull_labdf_into_addtext(lab_date=ud, lab_key=lab_key, not_null_df=non_null_frag)
