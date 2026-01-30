@@ -240,5 +240,7 @@ $RECYCLE.BIN/
 
 # By User
 configs/*.json
+!requirements.txt
+!runtime.txt
 
 # End of https://www.gitignore.io/api/python,pycharm,windows
